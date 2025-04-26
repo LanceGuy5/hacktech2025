@@ -1,3 +1,4 @@
+import { GoogleWorker } from "../models/google.js";
 import { OpenAIWorker } from "../models/openai.js";
 
 function getHelloWorld(req, res) {
@@ -38,7 +39,35 @@ function postSymptoms(req, res) {
   return res.status(200).json({ message: 'Request processed successfully!' });
 }
 
+async function getNearbyHospitals(req, res) {
+  const { lat, lng } = req.query;
+
+  if (!lat || !lng) {
+    return res.status(400).json({ error: 'Latitude and longitude are required!' });
+  }
+
+  // pull google singleton
+  const google = new GoogleWorker({ apiKey: process.env.GOOGLE_API_KEY });
+  if (!google) {
+    return res.status(500).json({ error: 'Google instance not initialized!' });
+  }
+
+  try {
+    const hospitals = await google.nearbyRequest(lat, lng, {
+      radius: 1000,
+      includedTypes: ["hospital"],
+      maxResultCount: 10,
+      fieldMask: "places.displayName,places.location,places.businessStatus",
+    });
+    return res.status(200).json(hospitals);
+  } catch (error) {
+    console.error('Error fetching nearby hospitals:', error);
+    return res.status(500).json({ error: 'Error fetching nearby hospitals!' });
+  }
+}
+
 export {
   getHelloWorld,
   postSymptoms,
+  getNearbyHospitals,
 }
