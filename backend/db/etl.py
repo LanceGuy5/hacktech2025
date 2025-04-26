@@ -1,49 +1,72 @@
-# %%
+# etl.py
 import pandas as pd
 from sqlalchemy import create_engine
 
-# %% [markdown]
-# ### AHA Data
-
-# %%
-# core + capabilities
+# 1. Columns to keep (original names)
 keep = [
-    'ID',        # hospital_id
-    'MNAME',     # name
-    'MLOCADDR',  # address
-    'MLOCCITY',  # city
-    'MSTATE',    # state
-    'MLOCZIP',   # zip
-    'LAT',       # latitude
-    'LONG',      # longitude
-    'EMDEPHOS',  # ED present?
-    'TRAUMHOS',  # trauma center?
-    'TRAUML90',  # trauma level
-    'HOSPBD',    # total beds
-    'YEAR',      # year 
-    # new capability columns:
-    'CTSCNHOS',  # CT scanners
-    'MSCTHOS',   # multislice CT <64
-    'MSCTGHOS',  # multislice CT ≥64
-    'MRIHOS',    # MRI units
-    'PETCTHOS',  # PET/CT units
-    'SPECTHOS',  # SPECT units
-    'ULTSNHOS',  # ultrasound units
-    'BRNBD',     # burn care beds
-    'MSICBD',    # med/surg ICU beds
-    'NICBD',     # neonatal ICU beds
-    'PEDICBD'    # pediatric ICU beds
+    'ID',
+    'MNAME',
+    'MLOCADDR',
+    'MLOCCITY',
+    'MSTATE',
+    'MLOCZIP',
+    'LAT',
+    'LONG',
+    'EMDEPHOS',
+    'TRAUMHOS',
+    'TRAUML90',
+    'HOSPBD',
+    'YEAR',
+    'CTSCNHOS',
+    'MSCTHOS',
+    'MSCTGHOS',
+    'MRIHOS',
+    'PETCTHOS',
+    'SPECTHOS',
+    'ULTSNHOS',
+    'BRNBD',
+    'MSICBD',
+    'NICBD',
+    'PEDICBD'
 ]
 
-# %%
-# Load the CSV file into a pandas DataFrame
-aha_df = pd.read_csv('data/raw/albert_aha.csv', usecols=keep, encoding='latin1')
-
-# Only keep year 2023
+# 2. Load & filter
+aha_df = pd.read_csv(
+    'data/raw/albert_aha.csv',
+    usecols=keep,
+    encoding='latin1'
+)
 aha_df = aha_df[aha_df['YEAR'] == 2023]
 
-# push to MySQL
+# 3. Rename to best-practice snake_case
+aha_df = aha_df.rename(columns={
+    'ID':                 'hospital_id',
+    'MNAME':              'name',
+    'MLOCADDR':           'address',
+    'MLOCCITY':           'city',
+    'MSTATE':             'state',
+    'MLOCZIP':            'zip_code',
+    'LAT':                'latitude',
+    'LONG':               'longitude',
+    'EMDEPHOS':           'has_ed',
+    'TRAUMHOS':           'is_trauma_center',
+    'TRAUML90':           'trauma_level',
+    'HOSPBD':             'total_beds',
+    'YEAR':               'year',
+    'CTSCNHOS':           'ct_scanners',
+    'MSCTHOS':            'ct_multislice_lt64',
+    'MSCTGHOS':           'ct_multislice_gte64',
+    'MRIHOS':             'mri_units',
+    'PETCTHOS':           'pet_ct_units',
+    'SPECTHOS':           'spect_units',
+    'ULTSNHOS':           'ultrasound_units',
+    'BRNBD':              'burn_care_beds',
+    'MSICBD':             'icu_med_surg_beds',
+    'NICBD':              'icu_neonatal_beds',
+    'PEDICBD':            'icu_pediatric_beds'
+})
+
+# 4. Persist to MySQL
 engine = create_engine("mysql+pymysql://root:pass@localhost:3306/hospitals")
-aha_df.to_sql('AHA_Hospitals', engine, if_exists='replace', index=False)
-
-
+aha_df.to_sql('aha_hospitals', engine, if_exists='replace', index=False)
+print("✅ ETL complete: 'aha_hospitals' written to MySQL")
