@@ -6,7 +6,7 @@ function SpeechSelection({ onBack }) {
     <div className="speech-selection">
       <h1>Speech Selection</h1>
       <div className="content">
-        <p>Describe your medical issue using voice:</p>
+        <p className='speech-selection-description'>Describe your medical issue using voice:</p>
         <div className="voice-controls">
           <button className="record-button">Start Recording</button>
           <div className="recording-status">Not recording</div>

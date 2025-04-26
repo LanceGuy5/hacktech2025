@@ -9,7 +9,7 @@ export class OpenAIWorker {
       return instance;
     }
     this.apiKey = apiKey;
-    this.model = "MODEL"; // TODO - determine which model to use
+    this.model = "gpt-4o"; // TODO - determine which model to use
     this.openai = new OpenAI({
       apiKey: this.apiKey,
     });
