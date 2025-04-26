@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-import fs from "fs";
 
 // singleton instance of OpenAI
 let instance = null;
