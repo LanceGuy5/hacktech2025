@@ -1,11 +1,15 @@
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import register_routes from './routes/register_routes.js';
 
 const app = express();
 
 console.log('Running in development mode');
 
-// Proxy frontend requests to Vite dev server
+// establish /api routes 
+register_routes(app);
+
+// proxy non-API requests to the frontend dev server
 app.use(
   '/',
   createProxyMiddleware({
