@@ -1,16 +1,25 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import './LandingPage.css'
 import ImageSelection from './ImageSelection'
 import TextSelection from './TextSelection'
 import SpeechSelection from './SpeechSelection'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 function LandingPage() {
   const [currentPage, setCurrentPage] = useState('landing')
   const navigate = useNavigate()
+  const location = useLocation()
+  
+  // Check location state when component mounts to see if we need to return to a specific page
+  useEffect(() => {
+    if (location.state?.returnTo === 'textSelection') {
+      setCurrentPage('text')
+    }
+  }, [location.state])
   
   const handleMapNavigation = () => {
-    navigate('/map')
+    // Navigate to map with state indicating we came from text selection
+    navigate('/map', { state: { from: 'textSelection' } })
   }
   
   const renderPage = () => {
