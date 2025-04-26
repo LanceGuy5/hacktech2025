@@ -26,17 +26,16 @@ function postSymptoms(req, res) {
   // TODO for now these just print, but we should send the response back to the client
   try {
     if (symptoms && photo) {
-      openai.sendTextWithImage(symptoms, photo);
+      return res.status(200).json({ result: openai.sendTextWithImage(symptoms, photo) });
     } else if (symptoms) {
-      openai.sendText(symptoms);
+      return res.status(200).json({ result: openai.sendText(symptoms) });
     } else if (photo) {
-      openai.sendImage(photo);
+      return res.status(200).json({ result: openai.sendImage(photo) });
     }
   } catch (error) {
     console.error('Error processing request:', error);
     return res.status(500).json({ error: 'Error processing request!' });
   }
-  return res.status(200).json({ message: 'Request processed successfully!' });
 }
 
 async function getNearbyHospitals(req, res) {

@@ -49,7 +49,7 @@ export class OpenAIWorker {
       ],
       max_tokens: 300,
     });
-    console.log(response.choices[0].message.content);
+    return (response.choices[0].message.content);
   }
 
   // for sending just a text description to OpenAI model
@@ -67,7 +67,7 @@ export class OpenAIWorker {
       ],
       max_tokens: 300,
     });
-    console.log(response.choices[0].message.content);
+    return (response.choices[0].message.content);
   }
 
   // for sending both a text description and an image to OpenAI model
@@ -91,7 +91,7 @@ export class OpenAIWorker {
       ],
       max_tokens: 300,
     });
-    console.log(response.choices[0].message.content);
+    return (response.choices[0].message.content);
   }
 }
 
