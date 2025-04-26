@@ -1,0 +1,21 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: hospitals-db
+    environment:
+      # 1️⃣ Set the root password for MySQL’s superuser
+      MYSQL_ROOT_PASSWORD: pass
+      # 2️⃣ Auto-create the 'hospitals' database for you on first startup
+      MYSQL_DATABASE: hospitals       # :contentReference[oaicite:0]{index=0}
+    ports:
+      # 3️⃣ Expose MySQL on localhost:3306 so your Python can connect
+      - "3306:3306"
+    command:
+      # 4️⃣ Turn on 'LOAD DATA LOCAL INFILE' support
+      --local-infile=1
+    volumes:
+      # 5️⃣ Persist the data folder so your DB survives restarts
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
