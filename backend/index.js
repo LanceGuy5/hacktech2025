@@ -2,6 +2,9 @@ import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import register_routes from './routes/register_routes.js';
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 const app = express();
 
 console.log('Running in development mode');

@@ -7,5 +7,5 @@ const upload = multer({ storage });
 
 export default function register_routes(app) {
   app.get('/api/hello', routes.getHelloWorld);
-  // app.post('/:username/createPost', upload.single('photo'), routes.createPost);
+  app.post('/api/postSymptoms', upload.single('photo'), routes.postSymptoms);
 }
