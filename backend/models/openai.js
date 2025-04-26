@@ -29,8 +29,8 @@ class OpenAIWorker {
     instance = null;
   }
 
-  // TODO - make it so that this function takes an image and text as input
-  sendImage = async function () {
+  // for sending just an image to OpenAI model
+  sendImage = async function (image) {
     const imageBuffer = fs.readFileSync("your_image.png");
     const base64Image = imageBuffer.toString("base64");
   
@@ -50,6 +50,7 @@ class OpenAIWorker {
     console.log(response.choices[0].message.content);
   }
 
+  // for sending just a text description to OpenAI model
   sendText = async function (text) {
     const response = await this.openai.chat.completions.create({
       model: this.model,
@@ -67,6 +68,7 @@ class OpenAIWorker {
     console.log(response.choices[0].message.content);
   }
 
+  // for sending both a text description and an image to OpenAI model
   sendTextWithImage = async function (text, image) {
     const response = await this.openai.chat.completions.create({
       model: this.model,
