@@ -1,0 +1,66 @@
+.map-container {
+  display: flex;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.map-options {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 500px;
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.hospital-option {
+  padding: 15px;
+  margin: 8px 0;
+  background-color: rgb(52, 52, 52);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
+}
+
+.hospital-option:hover {
+  background-color: #7b7b7b;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.map-btn {
+  padding: 10px 25px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
+}
+
+.view-btn {
+  background-color: #007bff;
+  color: white;
+}
+
+.view-btn:hover {
+  background-color: #0069d9;
+}
+
+.direct-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.direct-btn:hover {
+  background-color: #218838;
+}

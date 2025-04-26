@@ -1,9 +1,9 @@
+import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import './App.css'
-import LandingPage from './components/LandingPage'
-import HospitalMap from './components/HospitalMap' 
+import LandingPage from './LandingPage'
+import HospitalMap from './HospitalMap'
 
-function App() {
+function Router() {
   return (
     <BrowserRouter>
       <Routes>
@@ -14,4 +14,4 @@ function App() {
   )
 }
 
-export default App
+export default Router
