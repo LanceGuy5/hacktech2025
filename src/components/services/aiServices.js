@@ -20,6 +20,9 @@ export const generateAIResponse = async (prompt, options = {}) => {
     const response = await fetch('/api/postSymptoms', {
       method: 'POST',
       body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     });
     
     if (!response.ok) {
@@ -29,9 +32,11 @@ export const generateAIResponse = async (prompt, options = {}) => {
     }
     
     // Parse the response from the backend
+    console.log(response.body);
     const responseData = await response.json();
     console.log('Backend response:', responseData);
-    console.log(responseData);
+    console.log(responseData.result);
+
     
     // Since the actual OpenAI response isn't returned in the backend yet,
     // we need to provide a fallback while the backend is being developed
