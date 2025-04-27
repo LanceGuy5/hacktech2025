@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
 import { getLocation } from "@/utils/utils";
-import { MapPin, Phone, Clock, ExternalLink } from "lucide-react";
+import { MapPin, Phone, Clock, ExternalLink, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export default function HospitalLocatorPage() {
   const [activeInfoWindow, setActiveInfoWindow] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showInfo, setShowInfo] = useState<string | null>(null);
 
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -91,8 +92,16 @@ export default function HospitalLocatorPage() {
         has_mri: hospital.internal_data.has_mri || false,
         has_ultrasound: hospital.internal_data.has_ultrasound || false,
         has_pet_ct: hospital.internal_data.has_pet_ct || false,
+        has_ed: hospital.internal_data.has_ed || false,
+        is_trauma_center: hospital.internal_data.is_trauma_center || false,
         total_beds: hospital.internal_data.total_beds || 0,
         total_beds_load: hospital.internal_data.total_beds_load || 0,
+        icu_med_surg_beds: hospital.internal_data.icu_med_surg_beds || 0,
+        icu_med_surg_beds_load: hospital.internal_data.icu_med_surg_beds_load || 0,
+        icu_pediatric_beds: hospital.internal_data.icu_pediatric_beds || 0,
+        icu_pediatric_beds_load: hospital.internal_data.icu_pediatric_beds_load || 0,
+        icu_neonatal_beds: hospital.internal_data.icu_neonatal_beds || 0,
+        icu_neonatal_beds_load: hospital.internal_data.icu_neonatal_beds_load || 0,
         score: hospital.score || null,
         estimated_wait: hospital.estimated_wait || null,
       }));
@@ -182,6 +191,10 @@ export default function HospitalLocatorPage() {
                       <div className="p-2 max-w-xs">
                         <h3 className="font-semibold text-lg">{hospital.name}</h3>
                         <p className="text-sm text-gray-600 mt-1">{hospital.address}</p>
+                        <div className="flex items-center">
+                          <Clock className="h-4 w-4 text-slate-500 mr-2" />
+                          <span>Estimated Wait: {hospital.estimated_wait ? `${hospital.estimated_wait} min` : 'Unknown'}</span>
+                        </div>
                         <div className="flex items-center mt-2 text-sm text-gray-600">
                           <Phone className="h-4 w-4 mr-1" />
                           {hospital.phone}
@@ -214,7 +227,13 @@ export default function HospitalLocatorPage() {
           <CardHeader className="p-4 border-b">
             <CardTitle>Hospitals List</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 overflow-y-auto h-[calc(100vh-10rem)]">
+          <CardContent className="p-4 overflow-y-auto h-[calc(100vh-10rem)] relative">
+            {showInfo && (
+              <div className="absolute top-29 right-5 bg-white p-3 rounded-md shadow-md border border-slate-200 z-10 w-64">
+                <p className="text-sm text-slate-700">This hospital was chosen based on your symptoms, expected wait time, and available facilities.</p>
+                <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowInfo(null)}>Close</Button>
+              </div>
+            )}
             <Accordion
               type="single"
               collapsible
@@ -227,11 +246,31 @@ export default function HospitalLocatorPage() {
                   key={hospital.id}
                   value={hospital.id}
                   className={cn(
-                    "border rounded-lg overflow-hidden",
+                    "border rounded-lg overflow-hidden relative",
                     selectedHospital === hospital.id ? "border-primary shadow-sm" : "border-slate-200",
                   )}
                 >
-                  <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 [&[data-state=open]]:bg-slate-50">
+                  {selectedHospital === hospital.id && (
+                    <div className="absolute top-20 right-5 z-10">
+                      <Info 
+                        className="h-5 w-5 text-slate-500 cursor-pointer hover:text-primary" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowInfo(showInfo ? null : "recommendation");
+                        }}
+                      />
+                    </div>
+                  )}
+                  <AccordionTrigger 
+                    className="px-4 py-3 hover:bg-slate-50 [&[data-state=open]]:bg-slate-50"
+                    onClick={(e) => {
+                      if (selectedHospital === hospital.id) {
+                        e.stopPropagation();
+                        setSelectedHospital(null);
+                        setActiveInfoWindow(null);
+                      }
+                    }}
+                  >
                     <div className="flex items-start">
                       <MapPin className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
                       <div className="text-left">
@@ -243,6 +282,10 @@ export default function HospitalLocatorPage() {
                   <AccordionContent className="px-4 pb-3 pt-0">
                     <div className="space-y-3 text-sm">
                       <div className="flex items-center">
+                        <Clock className="h-4 w-4 text-slate-500 mr-2" />
+                        <span>Estimated Wait: {hospital.estimated_wait ? `${hospital.estimated_wait} min` : 'Unknown'}</span>
+                      </div>
+                      <div className="flex items-center">
                         <Phone className="h-4 w-4 text-slate-500 mr-2" />
                         <span>{hospital.phone}</span>
                       </div>
@@ -251,7 +294,7 @@ export default function HospitalLocatorPage() {
                         <span>{hospital.hours}</span>
                       </div>
                       <div className="pt-2">
-                        <h4 className="font-medium mb-1">Specialties</h4>
+                        <h4 className="font-medium mb-1">Recommendation</h4>
                         <ul className="list-disc list-inside text-slate-600 space-y-1">
                           {hospital.specialties.map((specialty: string, index: number) => (
                             <li key={index}>{specialty}</li>
@@ -265,7 +308,12 @@ export default function HospitalLocatorPage() {
                           <div>MRI: {hospital.has_mri ? '✅' : '❌'}</div>
                           <div>Ultrasound: {hospital.has_ultrasound ? '✅' : '❌'}</div>
                           <div>PET/CT: {hospital.has_pet_ct ? '✅' : '❌'}</div>
-                          <div>Beds: {Math.max(0, (hospital.total_beds || 0) - (hospital.total_beds_load || 0))}</div>
+                          <div>Trauma Room: {hospital.is_trauma_center ? '✅' : '❌'}</div>
+                          <div>ER Room: {hospital.has_ed ? '✅' : '❌'}</div>
+                          <div>ICU Beds: {Math.max(0, (hospital.icu_med_surg_beds || 0) - (hospital.icu_med_surg_beds_load || 0))}</div>
+                          <div>Pediatric ICU Beds: {Math.max(0, (hospital.icu_pediatric_beds || 0) - (hospital.icu_pediatric_beds_load || 0))}</div>
+                          <div>Neonatal ICU Beds: {Math.max(0, (hospital.icu_neonatal_beds || 0) - (hospital.icu_neonatal_beds_load || 0))}</div>
+                          <div>Total Beds: {Math.max(0, (hospital.total_beds || 0) - (hospital.total_beds_load || 0))}</div>
                         </div>
                       </div>
                       {hospital.websiteUri && (
