@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import './TextSelection.css'
 import { generateAIResponse } from './services/aiServices'
 
-function TextSelection({ onBack, onNavigateToMap }) {
+function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = false }) {
   const [showTextBox, setShowTextBox] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [apiResponse, setApiResponse] = useState(null)
@@ -22,6 +22,14 @@ function TextSelection({ onBack, onNavigateToMap }) {
   const symptomTextRef = useRef(null)
   const chatContainerRef = useRef(null)
   const fileInputRef = useRef(null)
+  
+  // Handle initial props
+  useEffect(() => {
+    if (initialShowImageOptions) {
+      setShowTextBox(true)
+      setShowImageOptions(true)
+    }
+  }, [initialShowImageOptions])
   
   // Scroll to bottom of chat when messages change
   useEffect(() => {

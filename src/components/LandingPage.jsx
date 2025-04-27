@@ -7,6 +7,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 function LandingPage() {
   const [currentPage, setCurrentPage] = useState('landing')
+  const [showImagePopup, setShowImagePopup] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   
@@ -22,12 +23,22 @@ function LandingPage() {
     navigate('/map', { state: { from: 'textSelection' } })
   }
   
+  // Handle image button click
+  const handleImageButtonClick = () => {
+    setCurrentPage('text')
+    setShowImagePopup(true)
+  }
+  
   const renderPage = () => {
     switch(currentPage) {
       case 'image':
         return <ImageSelection onBack={() => setCurrentPage('landing')} />
       case 'text':
-        return <TextSelection onBack={() => setCurrentPage('landing')} onNavigateToMap={handleMapNavigation} />
+        return <TextSelection 
+          onBack={() => setCurrentPage('landing')} 
+          onNavigateToMap={handleMapNavigation}
+          initialShowImageOptions={showImagePopup} 
+        />
       case 'speech':
         return <SpeechSelection onBack={() => setCurrentPage('landing')} />
       default:
@@ -43,7 +54,7 @@ function LandingPage() {
               </button>
               <button 
                 className="issue-btn image-button" 
-                onClick={() => setCurrentPage('image')}
+                onClick={handleImageButtonClick}
               >
                 Image
               </button>
