@@ -176,7 +176,7 @@ export class OpenAIWorker {
         response_format: 'text'
       });
 
-      return response.text;
+      return response;
     } catch (error) {
       console.error("Error in Whisper transcription:", error);
       throw new Error("Failed to transcribe audio.");

@@ -233,7 +233,8 @@ export default function ChatPage() {
         const formData = new FormData();
         formData.append("audio", audioBlob, "recording.webm");
         const result = await axios.post("/api/transcribeAudio", formData);
-        console.log(result);
+        setInput(result.data.transcription);
+        // console.log(result.data.transcription);
       };
 
       mediaRecorder.start();
@@ -257,8 +258,8 @@ export default function ChatPage() {
         <CardHeader className="border-b">
           <CardTitle className="flex items-center">
             <div className="flex-1">
-              <h2 className="text-xl font-semibold">Medical Assistant</h2>
-              <p className="text-xs text-slate-500">Ask questions, share images, or use voice</p>
+              <h2 className="text-2xl font-semibold">Clarity</h2>
+              <p className="text-xs text-slate-500">Get clarity on your medical concerns through text, voice, an images.</p>
             </div>
             <Button variant="outline" size="icon" className="ml-auto" onClick={triggerFileInput}>
               <ImageIcon className="h-4 w-4" />
