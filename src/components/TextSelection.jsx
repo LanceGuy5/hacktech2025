@@ -3,7 +3,7 @@ import './TextSelection.css'
 import { generateAIResponse } from './services/aiServices'
 import axios from 'axios'
 
-function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = false }) {
+function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = false, initialShowRecording = false }) {
   const [showTextBox, setShowTextBox] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [apiResponse, setApiResponse] = useState(null)
@@ -19,6 +19,9 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
   // Image handling states
   const [showImageOptions, setShowImageOptions] = useState(false)
   const [selectedImage, setSelectedImage] = useState(null)
+  // Audio recording states
+  const [isRecording, setIsRecording] = useState(false)
+  const [isActivelyRecording, setIsActivelyRecording] = useState(false)
 
   const symptomTextRef = useRef(null)
   const chatContainerRef = useRef(null)
@@ -30,7 +33,12 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
       setShowTextBox(true)
       setShowImageOptions(true)
     }
-  }, [initialShowImageOptions])
+    
+    if (initialShowRecording) {
+      setShowTextBox(true)
+      setIsRecording(true)
+    }
+  }, [initialShowImageOptions, initialShowRecording])
 
   // Scroll to bottom of chat when messages change
   useEffect(() => {
@@ -80,6 +88,23 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
   // Trigger file input click
   const triggerFileUpload = () => {
     fileInputRef.current.click()
+  }
+
+  // Handle microphone click - toggle recording mode
+  const toggleRecording = () => {
+    setIsRecording(!isRecording)
+    setIsActivelyRecording(false) // Reset active recording when toggling
+  }
+
+  // Start actual recording
+  const startRecording = () => {
+    setIsActivelyRecording(true)
+  }
+
+  // Stop recording
+  const stopRecording = () => {
+    setIsActivelyRecording(false)
+    // Here you would handle the recording data
   }
 
   const handleSubmit = async () => {
@@ -165,6 +190,57 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
       </React.Fragment>
     ));
   }
+
+  // Text input with microphone button component
+  const TextInputWithMic = () => (
+    <div className="input-with-mic-container">
+      <textarea
+        ref={symptomTextRef}
+        className="chat-input"
+        placeholder="Describe your symptoms..."
+        rows="2"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
+            if (!isLoading) handleSubmit()
+          }
+        }}
+      ></textarea>
+      <button className="mic-button" onClick={toggleRecording}>
+        🎤
+      </button>
+    </div>
+  )
+
+  // Recording component
+  const RecordingComponent = () => (
+    <div className="recording-container">
+      <div className="recording-indicator">
+        {isActivelyRecording ? (
+          <>
+            <div className="recording-pulse"></div>
+            <span>Recording...</span>
+          </>
+        ) : (
+          <span>Ready to record</span>
+        )}
+      </div>
+      <div className="recording-buttons-container">
+        <button className="cancel-recording-button" onClick={toggleRecording}>
+          Cancel
+        </button>
+        {isActivelyRecording ? (
+          <button className="stop-recording-button" onClick={stopRecording}>
+            ■
+          </button>
+        ) : (
+          <button className="start-recording-button" onClick={startRecording}>
+            ▶
+          </button>
+        )}
+      </div>
+    </div>
+  )
 
   return (
     <div className="text-selection">
@@ -256,25 +332,20 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
             </div>
           )}
           <div className="chat-input-container">
-            <textarea
-              ref={symptomTextRef}
-              className="chat-input"
-              placeholder="Describe your symptoms..."
-              rows="2"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  if (!isLoading) handleSubmit()
-                }
-              }}
-            ></textarea>
-            <button
-              className={`chat-send-button ${isLoading ? 'loading' : ''}`}
-              onClick={handleSubmit}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Processing...' : 'Send'}
-            </button>
+            {isRecording ? (
+              <RecordingComponent />
+            ) : (
+              <>
+                <TextInputWithMic />
+                <button
+                  className={`chat-send-button ${isLoading ? 'loading' : ''}`}
+                  onClick={handleSubmit}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Processing...' : 'Send'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

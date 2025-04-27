@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import './LandingPage.css'
-import ImageSelection from './ImageSelection'
 import TextSelection from './TextSelection'
-import SpeechSelection from './SpeechSelection'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 function LandingPage() {
   const [currentPage, setCurrentPage] = useState('landing')
   const [showImagePopup, setShowImagePopup] = useState(false)
+  const [showRecordingComponent, setShowRecordingComponent] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   
@@ -27,20 +26,25 @@ function LandingPage() {
   const handleImageButtonClick = () => {
     setCurrentPage('text')
     setShowImagePopup(true)
+    setShowRecordingComponent(false)
+  }
+  
+  // Handle speech button click
+  const handleSpeechButtonClick = () => {
+    setCurrentPage('text')
+    setShowRecordingComponent(true)
+    setShowImagePopup(false)
   }
   
   const renderPage = () => {
     switch(currentPage) {
-      case 'image':
-        return <ImageSelection onBack={() => setCurrentPage('landing')} />
       case 'text':
         return <TextSelection 
           onBack={() => setCurrentPage('landing')} 
           onNavigateToMap={handleMapNavigation}
-          initialShowImageOptions={showImagePopup} 
+          initialShowImageOptions={showImagePopup}
+          initialShowRecording={showRecordingComponent}
         />
-      case 'speech':
-        return <SpeechSelection onBack={() => setCurrentPage('landing')} />
       default:
         return (
           <div className="landing-page">
@@ -60,7 +64,7 @@ function LandingPage() {
               </button>
               <button 
                 className="issue-btn speech-button"
-                onClick={() => setCurrentPage('speech')}
+                onClick={handleSpeechButtonClick}
               >
                 Speech
               </button>

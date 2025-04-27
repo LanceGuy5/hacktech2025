@@ -21,6 +21,7 @@
   width: 100%;
   border-radius: 8px;
   background-color: #3f3f3f;
+  padding: 0px 20px;
 }
 
 .text-selection-description {
@@ -232,9 +233,15 @@
   border-top: 1px solid #2a2a2a;
 }
 
+.input-with-mic-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+}
+
 .chat-input {
   flex: 1;
-  padding: 12px;
+  padding: 12px 40px 12px 12px;
   margin-right: 10px;
   background-color: #4d4d4d;
   border: 1px solid #555;
@@ -248,6 +255,25 @@
 .chat-input:focus {
   outline: none;
   border-color: #007bff;
+}
+
+.mic-button {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 5px;
+  z-index: 2;
+  transition: color 0.2s;
+}
+
+.mic-button:hover {
+  color: #fff;
 }
 
 .chat-send-button {
@@ -372,4 +398,97 @@
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
+}
+
+/* Recording component styles */
+.recording-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #4d4d4d;
+  border-radius: 20px;
+  padding: 10px 15px;
+  margin-right: 10px;
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  color: white;
+  font-size: 16px;
+}
+
+.recording-pulse {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #ff4b4b;
+  margin-right: 10px;
+  animation: pulse 1.5s infinite;
+}
+
+.recording-buttons-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.start-recording-button, .stop-recording-button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.start-recording-button {
+  background-color: #4CAF50; /* Green */
+  color: white;
+}
+
+.start-recording-button:hover {
+  background-color: #45a049;
+}
+
+.stop-recording-button {
+  background-color: #ff4b4b; /* Red */
+  color: white;
+}
+
+.stop-recording-button:hover {
+  background-color: #e63e3e;
+}
+
+.cancel-recording-button {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  color: white;
+  border-radius: 20px;
+  padding: 6px 15px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  margin-left: 10px;
+}
+
+.cancel-recording-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 75, 75, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 75, 75, 0);
+  }
 }
