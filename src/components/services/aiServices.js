@@ -3,41 +3,41 @@ export const generateAIResponse = async (prompt, options = {}) => {
     if (!prompt || prompt.trim() === '') {
       throw new Error('Prompt cannot be empty');
     }
-    
+
     // Log request
     console.log('Sending AI request:', { promptLength: prompt.length, options });
-    
+
     // For now, we're going to use the existing endpoint in the backend
+    // const formData = new FormData();
+    // formData.append('symptoms', prompt);
+    // // formData.append('photo', new File([])); // Placeholder for photo, if needed
+
+    // // If we have conversation history, add it to the request
+    // // Note: The backend isn't set up to handle this yet, but it's ready for when it is
+    // if (options.conversationHistory && options.conversationHistory.length > 0) {
+    //   formData.append('conversationHistory', JSON.stringify(options.conversationHistory));
+    // }
+
     const formData = new FormData();
     formData.append('symptoms', prompt);
-    
-    // If we have conversation history, add it to the request
-    // Note: The backend isn't set up to handle this yet, but it's ready for when it is
-    if (options.conversationHistory && options.conversationHistory.length > 0) {
-      formData.append('conversationHistory', JSON.stringify(options.conversationHistory));
-    }
-    
-    const response = await fetch('/api/postSymptoms', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-    
+    // You don't need to manually add Content-Type, Axios will do it!
+
+    const response = await axios.post('/api/postSymptoms', formData);
+
+
     if (!response.ok) {
-        const errorMessage = 'Failed to process symptoms';
-        console.error('AI service error:', errorMessage);
-        throw new Error(errorMessage);
+      const errorMessage = 'Failed to process symptoms';
+      console.error('AI service error:', errorMessage);
+      throw new Error(errorMessage);
     }
-    
+
     // Parse the response from the backend
     console.log(response.body);
     const responseData = await response.json();
     console.log('Backend response:', responseData);
     console.log(responseData.result);
 
-    
+
     // Since the actual OpenAI response isn't returned in the backend yet,
     // we need to provide a fallback while the backend is being developed
     // This will automatically switch to using the real response when the backend is updated
@@ -70,11 +70,11 @@ const analyzeSymptomsWithContext = (symptoms, history) => {
   // Convert symptom text to lowercase for easier matching
   const symptomText = symptoms.toLowerCase();
   console.log(symptomText);
-  
+
   // Extract previous interactions to provide more context-aware responses
   const previousMessages = history.filter(msg => msg.role === 'user').map(msg => msg.content);
   const isFollowUpQuestion = previousMessages.length > 1;
-  
+
   // If this is a follow-up question, we should respond more conversationally
   if (isFollowUpQuestion) {
     if (symptomText.includes('how long') || symptomText.includes('duration')) {
@@ -90,7 +90,7 @@ const analyzeSymptomsWithContext = (symptoms, history) => {
       return 'I understand you need more information. To give you the most accurate advice, could you provide more details about your symptoms or ask a specific question about your condition?';
     }
   }
-  
+
   // Initial symptom assessment responses
   if (symptomText.includes('headache')) {
     return 'You may be experiencing a tension headache or migraine. I recommend taking over-the-counter pain relievers like acetaminophen or ibuprofen and resting in a quiet, dark room. A cold compress may also help alleviate pain. Would you like to know more about potential triggers or when you should see a doctor?';
@@ -118,7 +118,7 @@ const analyzeSymptomsForDemo = analyzeSymptomsWithContext;
 const suggestMedicalSuppliesForDemo = (symptoms) => {
   const symptomText = symptoms.toLowerCase();
   const supplies = ['First Aid Kit'];
-  
+
   if (symptomText.includes('headache')) {
     supplies.push('Pain relievers (acetaminophen, ibuprofen)', 'Cold compress');
   }
@@ -131,6 +131,6 @@ const suggestMedicalSuppliesForDemo = (symptoms) => {
   if (symptomText.includes('dizz') || symptomText.includes('faint')) {
     supplies.push('Electrolyte solution', 'Blood pressure monitor');
   }
-  
+
   return supplies;
 };

@@ -6,7 +6,7 @@ function getHelloWorld(req, res) {
   res.send('Hello World');
 }
 
-function postSymptoms(req, res) {
+async function postSymptoms(req, res) {
   // pull symptoms from request
   const { symptoms } = req.body;
   // image exists through middleware -> pull individually through request
@@ -27,11 +27,14 @@ function postSymptoms(req, res) {
   // TODO for now these just print, but we should send the response back to the client
   try {
     if (symptoms && photo) {
-      return res.status(200).json({ result: openai.sendTextWithImage(symptoms, photo) });
+      const textResponse = await openai.sendTextWithImage(symptoms, photo);
+      return res.status(200).json({ result: textResponse });
     } else if (symptoms) {
-      return res.status(200).json({ result: openai.sendText(symptoms) });
+      const symptomsResponse = await openai.sendText(symptoms);
+      return res.status(200).json({ result: symptomsResponse });
     } else if (photo) {
-      return res.status(200).json({ result: openai.sendImage(photo) });
+      const imageResponse = await openai.sendImage(photo);
+      return res.status(200).json({ result: imageResponse });
     }
   } catch (error) {
     console.error('Error processing request:', error);
@@ -69,19 +72,19 @@ async function getNearbyHospitals(req, res) {
 // You might want to add a route for getting hospital details by ID
 async function getHospitalById(req, res) {
   const { id } = req.params;
-  
+
   if (!id) {
     return res.status(400).json({ error: 'Hospital ID is required!' });
   }
-  
+
   try {
     const db = new DBWorker();
     const hospital = await db.getHospitalById(id);
-    
+
     if (!hospital) {
       return res.status(404).json({ error: 'Hospital not found!' });
     }
-    
+
     return res.status(200).json(hospital);
   } catch (error) {
     console.error('Error fetching hospital details:', error);

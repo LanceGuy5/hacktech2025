@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import './TextSelection.css'
 import { generateAIResponse } from './services/aiServices'
+import axios from 'axios'
 
 function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = false }) {
   const [showTextBox, setShowTextBox] = useState(false)
@@ -9,7 +10,7 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
   // Store conversation history for context
   const [conversationHistory, setConversationHistory] = useState([])
   const [messages, setMessages] = useState([
-    { 
+    {
       sender: 'ai',
       text: "Hello, I'm your medical assistant. Please describe your symptoms in detail, and I'll provide an analysis.",
       timestamp: new Date()
@@ -18,11 +19,11 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
   // Image handling states
   const [showImageOptions, setShowImageOptions] = useState(false)
   const [selectedImage, setSelectedImage] = useState(null)
-  
+
   const symptomTextRef = useRef(null)
   const chatContainerRef = useRef(null)
   const fileInputRef = useRef(null)
-  
+
   // Handle initial props
   useEffect(() => {
     if (initialShowImageOptions) {
@@ -30,39 +31,39 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
       setShowImageOptions(true)
     }
   }, [initialShowImageOptions])
-  
+
   // Scroll to bottom of chat when messages change
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
     }
   }, [messages])
-  
+
   const handleDescribeClick = () => {
     setShowTextBox(true)
     setApiResponse(null)
     setConversationHistory([])
     // Reset messages when returning to this screen
     setMessages([
-      { 
+      {
         sender: 'ai',
         text: "Hello, I'm your medical assistant. Please describe your symptoms in detail, and I'll provide an analysis.",
         timestamp: new Date()
       }
     ])
   }
-  
+
   const handleBackToOptions = () => {
     setShowTextBox(false)
     setApiResponse(null)
     setConversationHistory([])
   }
-  
+
   // Handle image icon click
   const handleImageIconClick = () => {
     setShowImageOptions(!showImageOptions)
   }
-  
+
   // Handle file upload
   const handleFileUpload = (event) => {
     const file = event.target.files[0]
@@ -75,20 +76,20 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
       reader.readAsDataURL(file)
     }
   }
-  
+
   // Trigger file input click
   const triggerFileUpload = () => {
     fileInputRef.current.click()
   }
-  
+
   const handleSubmit = async () => {
     const symptomText = symptomTextRef.current.value.trim()
-    
+
     if (!symptomText) {
       alert('Please describe your symptoms')
       return
     }
-    
+
     // Add user message to chat
     const newUserMessage = {
       sender: 'user',
@@ -96,40 +97,48 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
       timestamp: new Date()
     }
     setMessages([...messages, newUserMessage])
-    
+
     // Add to conversation history to provide context for the AI
     const updatedHistory = [...conversationHistory, { role: 'user', content: symptomText }]
     setConversationHistory(updatedHistory)
-    
+
     // Clear input field
     symptomTextRef.current.value = ''
-    
+
     setIsLoading(true)
-    
+
     try {
       // Call the AI service with the updated conversation history for context
-      const data = await generateAIResponse(symptomText, { conversationHistory: updatedHistory })
-      
+      // const data = await generateAIResponse(symptomText, { conversationHistory: updatedHistory })
+      const formData = new FormData();
+      formData.append('symptoms', symptomText);
+      const result = await axios.post('/api/postSymptoms', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      const data = result.data.result;
+
       // Add AI message to chat
       const newAiMessage = {
         sender: 'ai',
-        text: data.response.analysis,
+        text: data,
         timestamp: new Date()
       }
       setMessages(prevMessages => [...prevMessages, newAiMessage])
-      
+
       // Update conversation history with the AI's response
-      setConversationHistory([...updatedHistory, { role: 'assistant', content: data.response.analysis }])
-      
+      setConversationHistory([...updatedHistory, { role: 'assistant', content: data }])
+
       // Save response data for reference
       setApiResponse(data.response)
-      
+
       setIsLoading(false)
-      
+
     } catch (error) {
       console.error('Error submitting symptoms:', error)
       setIsLoading(false)
-      
+
       // Add error message to chat
       const errorMessage = {
         sender: 'ai',
@@ -140,14 +149,14 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
       setMessages(prevMessages => [...prevMessages, errorMessage])
     }
   }
-  
+
   // Format chat message with line breaks
   const formatMessageText = (text) => {
     // Handle cases where text might not be a string
     if (!text || typeof text !== 'string') {
       return String(text || '');
     }
-    
+
     // Process string with line breaks
     return text.split('\\n').map((line, i) => (
       <React.Fragment key={i}>
@@ -156,11 +165,11 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
       </React.Fragment>
     ));
   }
-  
+
   return (
     <div className="text-selection">
       <h1 className='text-selection-title'>Text Selection</h1>
-      
+
       {!showTextBox ? (
         // Show symptom options
         <div className="content">
@@ -185,7 +194,7 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
               </button>
             </div>
           </div>
-          
+
           {/* Image options popup */}
           {showImageOptions && (
             <div className="image-options-popup">
@@ -196,22 +205,22 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
                 Take Photo
               </div>
               {/* Hidden file input */}
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                style={{ display: 'none' }} 
-                accept="image/*" 
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                accept="image/*"
                 onChange={handleFileUpload}
               />
             </div>
           )}
-          
-          
+
+
           <div className="chat-container" ref={chatContainerRef}>
             {/* All Messages in sequence */}
             {messages.map((message, index) => (
-              <div 
-                key={`message-${index}`} 
+              <div
+                key={`message-${index}`}
                 className={`chat-message ${message.sender === 'ai' ? 'ai-message' : 'user-message'} ${message.isError ? 'error-message' : ''}`}
               >
                 <div className="message-bubble">
@@ -225,7 +234,7 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
                 </div>
               </div>
             ))}
-            
+
             {/* Loading indicator */}
             {isLoading && (
               <div className="chat-message ai-message loading-message">
@@ -247,9 +256,9 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
             </div>
           )}
           <div className="chat-input-container">
-            <textarea 
+            <textarea
               ref={symptomTextRef}
-              className="chat-input" 
+              className="chat-input"
               placeholder="Describe your symptoms..."
               rows="2"
               onKeyDown={(e) => {
@@ -259,8 +268,8 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
                 }
               }}
             ></textarea>
-            <button 
-              className={`chat-send-button ${isLoading ? 'loading' : ''}`} 
+            <button
+              className={`chat-send-button ${isLoading ? 'loading' : ''}`}
               onClick={handleSubmit}
               disabled={isLoading}
             >
@@ -269,7 +278,7 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
           </div>
         </div>
       )}
-      
+
       {!showTextBox && (
         <button className="back-button" onClick={onBack}>
           Back to Options

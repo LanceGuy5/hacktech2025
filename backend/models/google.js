@@ -54,8 +54,6 @@ export class GoogleWorker {
     // 👇 Add fieldMask as query param to the URL
     const url = `https://places.googleapis.com/v1/places:searchNearby`;
 
-    console.log("Google Places API URL:", url);
-
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -72,8 +70,6 @@ export class GoogleWorker {
     }
 
     const data = await response.json();
-
-    console.log("Google Places API response data:", JSON.stringify(data, null, 2));
 
     // @ts-ignore
     if (data.error) {

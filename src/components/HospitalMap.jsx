@@ -71,7 +71,7 @@ function HospitalMap() {
 
   // Render map error
   if (loadError) return <div>Error loading maps</div>
-  
+
   // Render loading state
   if (!isLoaded) return <div>Loading maps...</div>
 
@@ -113,7 +113,7 @@ function HospitalMap() {
         <div className='hospital-option' onClick={() => handleViewHospital(1)}>Memorial Hospital</div>
         <div className='hospital-option' onClick={() => handleViewHospital(2)}>City Medical Center</div>
         <div className='hospital-option' onClick={() => handleViewHospital(3)}>Community Healthcare</div>
-        
+
         <div className='button-container'>
           <button className='back-btn' onClick={handleBack}>Back</button>
           <button className='map-btn view-btn'>View</button>
@@ -124,4 +124,4 @@ function HospitalMap() {
   )
 }
 
-export default HospitalMap
+export default HospitalMap;
