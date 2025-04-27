@@ -27,6 +27,7 @@ export default function ChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const [hospitalButton, setHospitalButtom] = useState(false);
+  const [imageDescriptions, setImageDescriptions] = useState<string[]>([]);
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -74,9 +75,19 @@ export default function ChatPage() {
     }
 
     try {
+      // Format conversation history for OpenAI
+      // Exclude the loading message and simplify to role/content format
+      const conversationHistory = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content || ""
+      }));
+      
       let formData = new FormData();
       if (input.trim() !== "") formData.append("symptoms", input);
       if (selectedFile) formData.append("photo", selectedFile);
+      
+      // Add conversation history as JSON string
+      formData.append("conversationHistory", JSON.stringify(conversationHistory));
 
       const response = await axios.post("/api/postSymptoms", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -98,6 +109,11 @@ export default function ChatPage() {
 
       // if the severity is bad enough, show a button to navigate to the map
       setHospitalButtom(formatted.severity && formatted.severity >= 6);
+
+      // Store image description if available
+      if (selectedFile && formatted.imageDescription) {
+        setImageDescriptions(prev => [...prev, formatted.imageDescription]);
+      }
     } catch (err) {
       console.error("Error:", err);
       setMessages((prev) =>
@@ -110,10 +126,53 @@ export default function ChatPage() {
     }
   };
 
-  const toHospitalMap = () => {
-    console.log("Navigating to hospital map");
-    // Navigate to the hospital map page
-    window.location.href = "/map";
+  const toHospitalMap = async () => {
+    try {
+      // Start with loading state
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          role: "assistant",
+          content: "Analyzing your medical needs to find the best hospital...",
+          image: null
+        }
+      ]);
+      
+      // Prepare conversation data
+      const conversationText = messages
+        .filter(m => m.role === "user" && m.content)
+        .map(m => m.content)
+        .join("\n");
+      
+      // Call API to generate patient needs
+      const response = await axios.post("/api/generatePatientNeeds", {
+        conversation: conversationText,
+        imageDescriptions: imageDescriptions
+      });
+      
+      if (response.data && response.data.patientNeeds) {
+        // Store the structured patient needs
+        localStorage.setItem('patientNeeds', JSON.stringify(response.data.patientNeeds));
+        
+        // Navigate to map
+        window.location.href = "/map";
+      } else {
+        throw new Error("Failed to generate patient needs");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      // Show error message
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          role: "assistant",
+          content: "Sorry, I couldn't analyze your medical needs. Please try again.",
+          image: null
+        }
+      ]);
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

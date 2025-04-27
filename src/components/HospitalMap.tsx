@@ -44,11 +44,23 @@ export default function HospitalLocatorPage() {
       if (error) throw new Error("Unable to get location");
 
       setUserLoc({ lat: latitude, lng: longitude });
+      
+      // Get patient needs from localStorage
+      const storedNeeds = localStorage.getItem('patientNeeds');
+      let url = `/api/getNearbyHospitals?lat=${latitude}&lng=${longitude}`;
+      
+      // Add patient needs as query param if available
+      if (storedNeeds) {
+        url += `&patientNeeds=${encodeURIComponent(storedNeeds)}`;
+      }
 
-      const response = await fetch(`/api/getNearbyHospitals?lat=${latitude}&lng=${longitude}`);
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Error fetching hospitals");
 
       let data = await response.json();
+
+      // log the data
+      console.log(data);
 
       data = data.places.map((hospital: any, index: number) => ({
         id: String(index),
@@ -62,6 +74,9 @@ export default function HospitalLocatorPage() {
         hours: "Open 24/7", // Could be smarter if API gives real hours
         specialties: ["General Healthcare"], // Placeholder, unless API returns specialties
         websiteUri: hospital.websiteUri || null,
+        score: hospital.score || null,
+        estimated_wait: hospital.estimated_wait || null,
+        // Add any other properties from the ranked hospitals
       }));
 
       setHospitals(data);

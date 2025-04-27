@@ -1,4 +1,3 @@
-
 // list of constant prompts (just bc i dont like them all in one file LOL)
 export const PROMPTS = {
   SYMPTOM: (str) => `
@@ -34,7 +33,8 @@ export const PROMPTS = {
   Response format (This will be immediately parsed by JSON.parse, so make it compatible):
   {
     "raw": (a plain English description/advice you would give based on the image),
-    "severity": (an integer between 1 and 10 indicating how serious the condition appears; 1 = minor, 10 = critical)
+    "severity": (an integer between 1 and 10 indicating how serious the condition appears; 1 = minor, 10 = critical),
+    "imageDescription": (a concise clinical description of what is visible in the image)
   }
 
   Be concise, professional, and strictly avoid diagnosing.  
@@ -61,4 +61,35 @@ export const PROMPTS = {
 
   Symptoms description: ${str}
 `,
-}
+
+  // Generate structured patient needs from conversation
+  // imageDescriptions is an array of strings, each representing a description of an image
+  GENERATE_PATIENT_NEEDS: (conversation, imageDescriptions = []) => `
+  You are a careful and knowledgeable medical assistant.
+  The user has described their condition and relevant context.
+
+  Your task is to analyze the conversation and extract the patient's medical needs into a structured JSON object following this schema:
+  {
+    "isTrauma": boolean,
+    "recommendedTraumaLevel": integer (1-5, lower number = higher trauma capability; null if not applicable),
+    "needsMRI": boolean,
+    "needsCTScan": boolean,
+    "needsUltrasound": boolean,
+    "needsPetCT": boolean,
+    "needsSurgicalICU": boolean,
+    "needsPediatricICU": boolean,
+    "needsNeonatalICU": boolean,
+    "explanation": string (brief rationale for each field assignment)
+  }
+
+  ${imageDescriptions.length > 0 ? 
+    `Images shared in the conversation:
+    ${imageDescriptions.map((desc, i) => `Image ${i+1}: ${desc}`).join('\n')}
+    
+    Consider these image descriptions along with the text conversation.` : ''}
+
+  Please output only valid JSON matching this schema with exactly these keys—no extra text or commentary.
+  Conversation context:
+  ${conversation}
+  `,
+};
