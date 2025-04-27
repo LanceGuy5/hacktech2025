@@ -241,19 +241,19 @@ export default function HospitalLocatorPage() {
             <CardTitle>Hospitals List</CardTitle>
           </CardHeader>
           <CardContent className="p-4 overflow-y-auto h-[calc(100vh-10rem)] relative">
-            {showInfo && (
-              <div className="absolute top-29 right-5 bg-white p-3 rounded-md shadow-md border border-slate-200 z-10 w-64">
-                <p className="text-sm text-slate-700">{
-                  userInfoJson.explanation
-                }</p>
-                <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowInfo(null)}>Close</Button>
-              </div>
-            )}
             <Accordion
               type="single"
               collapsible
               value={selectedHospital || undefined}
-              onValueChange={(value) => value && handleHospitalSelect(value)}
+              onValueChange={(value) => {
+                if (value) {
+                  handleHospitalSelect(value);
+                  setShowInfo(null);
+                } else {
+                  setSelectedHospital(null);
+                  setShowInfo(null);
+                }
+              }}
               className="space-y-2"
             >
               {hospitals.map((hospital) => (
@@ -266,14 +266,25 @@ export default function HospitalLocatorPage() {
                   )}
                 >
                   {selectedHospital === hospital.id && (
-                    <div className="absolute top-20 right-5 z-10">
+                    <div className="absolute top-[65px] right-[17px] z-10">
                       <Info
                         className="h-5 w-5 text-slate-500 cursor-pointer hover:text-primary"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setShowInfo(showInfo ? null : "recommendation");
+                          setShowInfo(showInfo === hospital.id ? null : hospital.id);
                         }}
                       />
+                    </div>
+                  )}
+                  {showInfo === hospital.id && (
+                    <div className="absolute top-[70px] right-[17px] z-10 bg-white p-3 rounded-md shadow-md border border-slate-200 w-64">
+                      <p className="text-sm text-slate-700">{
+                        userInfoJson?.explanation
+                      }</p>
+                      <Button variant="ghost" size="sm" className="mt-2" onClick={(e) => {
+                        e.stopPropagation();
+                        setShowInfo(null);
+                      }}>Close</Button>
                     </div>
                   )}
                   <AccordionTrigger
