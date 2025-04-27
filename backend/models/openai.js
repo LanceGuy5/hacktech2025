@@ -73,13 +73,21 @@ export class OpenAIWorker {
   // for sending both a text description and an image to OpenAI model
   sendTextWithImage = async function (text, image) {
     const b64Img = image.buffer.toString("base64");
+
     const response = await this.openai.chat.completions.create({
       model: this.model,
       messages: [
         {
           role: "user",
           content: [
-            { type: "text", text: "Analyze a paragraph describing the symptoms of a user as well as an image of their symptoms and come up with a list of potential causes." },
+            {
+              type: "text",
+              text: `Analyze the following paragraph *and* the attached image together. 
+  The paragraph describes the symptoms, and the image shows the physical condition. 
+  Give a combined analysis with potential causes.
+  
+  Symptoms description: ${text}`,
+            },
             {
               type: "image_url",
               image_url: {
@@ -91,7 +99,8 @@ export class OpenAIWorker {
       ],
       max_tokens: 300,
     });
-    return (response.choices[0].message.content);
-  }
+
+    return response.choices[0].message.content;
+  };
 }
 

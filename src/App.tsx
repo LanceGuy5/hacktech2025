@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import './App.css'
-import LandingPage from '../src/components/LandingPage'
-import HospitalMap from './components/HospitalMap';
+// import './App.css'
+import LandingPage from '../src/components/LandingPage.tsx'
+import HospitalMap from './components/HospitalMap.tsx';
 
 function App() {
   return (

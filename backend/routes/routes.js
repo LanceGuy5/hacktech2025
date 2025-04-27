@@ -28,6 +28,7 @@ async function postSymptoms(req, res) {
   // TODO for now these just print, but we should send the response back to the client
   try {
     if (symptoms && photo) {
+      console.log('Both symptoms and photo provided');
       const textResponse = await openai.sendTextWithImage(symptoms, photo);
       return res.status(200).json({ result: textResponse });
     } else if (symptoms) {
@@ -53,24 +54,24 @@ async function getNearbyHospitals(req, res) {
   try {
     // Fetch nearby hospitals with enhanced data
     const results = await fetchNearbyHospitals(lat, lng);
-    
+
     // If patient needs are provided, rank the hospitals
     if (patientNeeds) {
       // Parse the patient needs from the query string
       const needs = typeof patientNeeds === 'string' ? JSON.parse(patientNeeds) : patientNeeds;
-      
+
       // Rank hospitals based on patient needs
       const rankedHospitals = rankHospitals(results.places, needs);
-      
+
       return res.status(200).json({
         places: rankedHospitals,
         debug: results.debug
       });
     }
-    
+
     // If no patient needs provided, return unranked results
     return res.status(200).json(results);
-    
+
   } catch (error) {
     console.error('[DEBUG] ERROR in getNearbyHospitals:', error);
     return res.status(500).json({ error: 'Error fetching nearby hospitals: ' + error.message });
