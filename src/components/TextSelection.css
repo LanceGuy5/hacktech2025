@@ -65,9 +65,11 @@
   flex-direction: column;
   width: 100%;
 }
+
 .content.chat-content {
   padding: 0;
 }
+
 .chat-header {
   width: 100%;
   padding: 10px;

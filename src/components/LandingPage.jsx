@@ -22,18 +22,18 @@ function LandingPage() {
     navigate('/map', { state: { from: 'textSelection' } })
   }
   
-  // Handle image button click
-  const handleImageButtonClick = () => {
+  // Handle headaches button click
+  const handleHeadachesButtonClick = () => {
     setCurrentPage('text')
-    setShowImagePopup(true)
+    setShowImagePopup(false)
     setShowRecordingComponent(false)
   }
   
-  // Handle speech button click
-  const handleSpeechButtonClick = () => {
+  // Handle chest pain button click
+  const handleChestPainClick = () => {
     setCurrentPage('text')
-    setShowRecordingComponent(true)
     setShowImagePopup(false)
+    setShowRecordingComponent(false)
   }
   
   const renderPage = () => {
@@ -58,15 +58,15 @@ function LandingPage() {
               </button>
               <button 
                 className="issue-btn image-button" 
-                onClick={handleImageButtonClick}
+                onClick={handleHeadachesButtonClick}
               >
-                Image
+                Headaches
               </button>
               <button 
                 className="issue-btn speech-button"
-                onClick={handleSpeechButtonClick}
+                onClick={handleChestPainClick}
               >
-                Speech
+                Chest Pain
               </button>
             </div>
           </div>

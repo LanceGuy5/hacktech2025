@@ -4,7 +4,6 @@ import { generateAIResponse } from './services/aiServices'
 import axios from 'axios'
 
 function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = false, initialShowRecording = false }) {
-  const [showTextBox, setShowTextBox] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [apiResponse, setApiResponse] = useState(null)
   // Store conversation history for context
@@ -30,12 +29,10 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
   // Handle initial props
   useEffect(() => {
     if (initialShowImageOptions) {
-      setShowTextBox(true)
       setShowImageOptions(true)
     }
     
     if (initialShowRecording) {
-      setShowTextBox(true)
       setIsRecording(true)
     }
   }, [initialShowImageOptions, initialShowRecording])
@@ -46,26 +43,6 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
     }
   }, [messages])
-
-  const handleDescribeClick = () => {
-    setShowTextBox(true)
-    setApiResponse(null)
-    setConversationHistory([])
-    // Reset messages when returning to this screen
-    setMessages([
-      {
-        sender: 'ai',
-        text: "Hello, I'm your medical assistant. Please describe your symptoms in detail, and I'll provide an analysis.",
-        timestamp: new Date()
-      }
-    ])
-  }
-
-  const handleBackToOptions = () => {
-    setShowTextBox(false)
-    setApiResponse(null)
-    setConversationHistory([])
-  }
 
   // Handle image icon click
   const handleImageIconClick = () => {
@@ -244,117 +221,98 @@ function TextSelection({ onBack, onNavigateToMap, initialShowImageOptions = fals
 
   return (
     <div className="text-selection">
-      <h1 className='text-selection-title'>Text Selection</h1>
-
-      {!showTextBox ? (
-        // Show symptom options
-        <div className="content">
-          <p className='text-selection-description'>Select your medical issue:</p>
-          <div className="symptom-options">
-            <div className="symptom-option" onClick={onNavigateToMap}>Chest Pain</div>
-            <div className="symptom-option">Seizure</div>
-            <div className="symptom-option">Headache</div>
-            <div className="symptom-option" onClick={handleDescribeClick}>Describe Symptom</div>
-          </div>
-        </div>
-      ) : (
-        // Show chat interface for describing symptoms
-        <div className="content chat-content">
-          <div className="chat-header">
-            <button className="back-option-button" onClick={handleBackToOptions}>
-              Back to Options
+      <h1 className='text-selection-title'>Medical Assistant</h1>
+      
+      <div className="content chat-content">
+        <div className="chat-header">
+          <button className="back-option-button" onClick={onBack}>
+            Back to Options
+          </button>
+          <div className="header-icons">
+            <button className="image-icon-button" onClick={handleImageIconClick}>
+              📷
             </button>
-            <div className="header-icons">
-              <button className="image-icon-button" onClick={handleImageIconClick}>
-                📷
-              </button>
-            </div>
-          </div>
-
-          {/* Image options popup */}
-          {showImageOptions && (
-            <div className="image-options-popup">
-              <div className="image-option-button" onClick={triggerFileUpload}>
-                Upload Image
-              </div>
-              <div className="image-option-button">
-                Take Photo
-              </div>
-              {/* Hidden file input */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                accept="image/*"
-                onChange={handleFileUpload}
-              />
-            </div>
-          )}
-
-
-          <div className="chat-container" ref={chatContainerRef}>
-            {/* All Messages in sequence */}
-            {messages.map((message, index) => (
-              <div
-                key={`message-${index}`}
-                className={`chat-message ${message.sender === 'ai' ? 'ai-message' : 'user-message'} ${message.isError ? 'error-message' : ''}`}
-              >
-                <div className="message-bubble">
-                  {formatMessageText(message.text)}
-                </div>
-                <div className="message-info">
-                  <span className="message-sender">{message.sender === 'ai' ? 'Medical Assistant' : 'You'}</span>
-                  <span className="message-time">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              </div>
-            ))}
-
-            {/* Loading indicator */}
-            {isLoading && (
-              <div className="chat-message ai-message loading-message">
-                <div className="message-bubble">
-                  <div className="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          {/* Image preview area */}
-          {selectedImage && (
-            <div className="image-preview-container">
-              <img src={selectedImage} alt="Uploaded" className="preview-image" />
-              <button className="remove-image-button" onClick={() => setSelectedImage(null)}>×</button>
-            </div>
-          )}
-          <div className="chat-input-container">
-            {isRecording ? (
-              <RecordingComponent />
-            ) : (
-              <>
-                <TextInputWithMic />
-                <button
-                  className={`chat-send-button ${isLoading ? 'loading' : ''}`}
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Processing...' : 'Send'}
-                </button>
-              </>
-            )}
           </div>
         </div>
-      )}
 
-      {!showTextBox && (
-        <button className="back-button" onClick={onBack}>
-          Back to Options
-        </button>
-      )}
+        {/* Image options popup */}
+        {showImageOptions && (
+          <div className="image-options-popup">
+            <div className="image-option-button" onClick={triggerFileUpload}>
+              Upload Image
+            </div>
+            <div className="image-option-button">
+              Take Photo
+            </div>
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              accept="image/*"
+              onChange={handleFileUpload}
+            />
+          </div>
+        )}
+
+        <div className="chat-container" ref={chatContainerRef}>
+          {/* All Messages in sequence */}
+          {messages.map((message, index) => (
+            <div
+              key={`message-${index}`}
+              className={`chat-message ${message.sender === 'ai' ? 'ai-message' : 'user-message'} ${message.isError ? 'error-message' : ''}`}
+            >
+              <div className="message-bubble">
+                {formatMessageText(message.text)}
+              </div>
+              <div className="message-info">
+                <span className="message-sender">{message.sender === 'ai' ? 'Medical Assistant' : 'You'}</span>
+                <span className="message-time">
+                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            </div>
+          ))}
+
+          {/* Loading indicator */}
+          {isLoading && (
+            <div className="chat-message ai-message loading-message">
+              <div className="message-bubble">
+                <div className="typing-indicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Image preview area */}
+        {selectedImage && (
+          <div className="image-preview-container">
+            <img src={selectedImage} alt="Uploaded" className="preview-image" />
+            <button className="remove-image-button" onClick={() => setSelectedImage(null)}>×</button>
+          </div>
+        )}
+        
+        <div className="chat-input-container">
+          {isRecording ? (
+            <RecordingComponent />
+          ) : (
+            <>
+              <TextInputWithMic />
+              <button
+                className={`chat-send-button ${isLoading ? 'loading' : ''}`}
+                onClick={handleSubmit}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Processing...' : 'Send'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
