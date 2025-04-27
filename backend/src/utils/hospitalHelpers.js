@@ -123,9 +123,14 @@ export function rankHospitals(hospitals, patientNeeds) {
       return;
     }
     
-    // Base score on availability
-    const bedLoad = data.total_beds_load || 0;
-    score += 100 - bedLoad; // Higher score for less load
+    // Base score on bed availability
+    const totalBeds = data.total_beds || 1; // Avoid division by zero
+    const bedsInUse = data.total_beds_load || 0;
+    const availableBeds = totalBeds - bedsInUse;
+    const bedAvailabilityRatio = availableBeds / totalBeds;
+    
+    // Scale to 0-100 points based on availability percentage
+    score += 100 * Math.max(0, bedAvailabilityRatio);
     
     // Check for specific needs
     if (patientNeeds) {
@@ -157,7 +162,7 @@ export function rankHospitals(hospitals, patientNeeds) {
       
       // Need for specific equipment (now using boolean flags)
       if (patientNeeds.needsMRI && data.has_mri) {
-        score += 20; // Fixed score for having the equipment
+        score += 20; 
       }
       
       if (patientNeeds.needsCTScan && data.has_ct) {
@@ -196,7 +201,8 @@ export function rankHospitals(hospitals, patientNeeds) {
     }
     
     // Calculate estimated wait time (simplified example)
-    const estimatedWait = Math.max(5, bedLoad * 30); // minutes
+    // more sophisticated model would not be linear
+    const estimatedWait = Math.max(5, bedAvailabilityRatio * 60); // minutes
     
     hospital.score = Math.round(score);
     hospital.estimated_wait = estimatedWait;

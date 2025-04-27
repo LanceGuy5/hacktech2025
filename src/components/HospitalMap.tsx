@@ -1,36 +1,43 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
-import { getLocation } from "../utils/utils";
-import { MoveRight } from "lucide-react";
+import { getLocation } from "@/utils/utils";
+import { MapPin, Phone, Clock, ExternalLink } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const mapContainerStyle = {
   width: "100%",
-  height: "400px",
-  borderRadius: "0.5rem",
+  height: "100%",
+  minHeight: "calc(100vh - 2rem)",
 };
 
 const libraries: any = ["places"];
 
-function HospitalMap() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const mapRef = useRef<google.maps.Map | null>(null);
-
-  const [userLoc, setUserLoc] = useState({ lat: 0, lng: 0 });
-  const [isConnected, setIsConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hospitals, setHospitals] = useState<any[]>([]);
-  const [selectedHospital, setSelectedHospital] = useState<any | null>(null);
-
-  const { isLoaded, loadError } = useJsApiLoader({
+export default function HospitalLocatorPage() {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_API_KEY,
-    libraries: libraries,
+    libraries,
   });
 
-  const getLocations = async () => {
+  const [userLoc, setUserLoc] = useState({ lat: 0, lng: 0 });
+  const [hospitals, setHospitals] = useState<any[]>([]);
+  const [selectedHospital, setSelectedHospital] = useState<string | null>(null);
+  const [activeInfoWindow, setActiveInfoWindow] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const mapRef = useRef<google.maps.Map | null>(null);
+
+  const onMapLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+  }, []);
+
+  const fetchHospitals = async () => {
     setIsLoading(true);
     try {
       const { latitude, longitude, error } = await getLocation();
@@ -42,11 +49,19 @@ function HospitalMap() {
       if (!response.ok) throw new Error("Error fetching hospitals");
 
       let data = await response.json();
-      data = data.map((hospital: any, index: number) => ({
-        id: index,
+
+      data = data.places.map((hospital: any, index: number) => ({
+        id: String(index),
         name: hospital.displayName.text,
-        position: { lat: hospital.location.latitude, lng: hospital.location.longitude },
-        status: hospital.businessStatus,
+        position: {
+          lat: hospital.location.latitude,
+          lng: hospital.location.longitude,
+        },
+        address: hospital.formattedAddress || "Address not available",
+        phone: hospital.nationalPhoneNumber || "Phone not available",
+        hours: "Open 24/7", // Could be smarter if API gives real hours
+        specialties: ["General Healthcare"], // Placeholder, unless API returns specialties
+        websiteUri: hospital.websiteUri || null,
       }));
 
       setHospitals(data);
@@ -59,124 +74,171 @@ function HospitalMap() {
     }
   };
 
-  const onMapLoad = useCallback((map: google.maps.Map) => {
-    mapRef.current = map;
-  }, []);
-
-  const handleMarkerClick = (hospital: any) => {
-    setSelectedHospital(hospital);
-  };
-
-  const handleViewHospital = (hospitalId: number) => {
+  const handleHospitalSelect = (hospitalId: string) => {
+    setSelectedHospital(hospitalId);
     const hospital = hospitals.find((h) => h.id === hospitalId);
+
     if (hospital && mapRef.current) {
       mapRef.current.panTo(hospital.position);
       mapRef.current.setZoom(15);
-      setSelectedHospital(hospital);
+      setActiveInfoWindow(hospitalId);
     }
   };
 
-  const handleBack = () => {
-    if (location.state?.from === "textSelection") {
-      navigate("/", { state: { returnTo: "textSelection" } });
-    } else {
-      navigate("/");
+  const google = typeof window !== "undefined" && window.google;
+
+  useEffect(() => {
+    if (isLoaded && !isConnected) {
+      fetchHospitals();
     }
-  };
+  }, [isLoaded, isConnected]);
 
-  if (!isLoaded) {
+  if (!isLoaded || isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <h2 className="text-lg font-semibold text-slate-700">Loading Google Maps...</h2>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <h2 className="text-lg font-semibold text-red-500">Error Loading Google Maps</h2>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <h2 className="text-lg font-semibold text-slate-700">Loading hospitals...</h2>
-      </div>
-    );
-  }
-
-  if (!isConnected) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen space-y-4">
-        <h2 className="text-2xl font-semibold text-slate-800">Hospital Map</h2>
-        <button
-          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition cursor-pointer"
-          onClick={getLocations}
-        >
-          Find hospitals near me <MoveRight className="inline-block ml-2" />
-        </button>
+      <div className="flex items-center justify-center h-screen bg-slate-100">
+        <p className="text-lg text-slate-700">Loading Map and Hospitals...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center px-4 py-6 space-y-6">
-      <div className="w-full max-w-4xl shadow-lg rounded-lg overflow-hidden">
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={userLoc}
-          zoom={13}
-          onLoad={onMapLoad}
-        >
-          {hospitals.map((hospital) => (
-            <Marker
-              key={hospital.id}
-              position={hospital.position}
-              onClick={() => handleMarkerClick(hospital)}
-            />
-          ))}
-
-          {selectedHospital && (
-            <InfoWindow
-              position={selectedHospital.position}
-              onCloseClick={() => setSelectedHospital(null)}
+    <div className="flex min-h-screen bg-slate-50 p-4">
+      <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 max-w-7xl">
+        {/* Map Section */}
+        <Card className="md:col-span-2 overflow-hidden">
+          <CardHeader className="p-4 border-b">
+            <CardTitle>Nearby Hospitals</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 h-[calc(100vh-10rem)]">
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={userLoc}
+              zoom={13}
+              onLoad={onMapLoad}
+              options={{
+                fullscreenControl: false,
+                streetViewControl: false,
+                mapTypeControl: false,
+                zoomControl: true,
+              }}
             >
-              <div className="p-2">
-                <h3 className="text-md font-semibold">{selectedHospital.name}</h3>
-                <p className="text-sm text-slate-600">Tap for directions</p>
-              </div>
-            </InfoWindow>
-          )}
-        </GoogleMap>
-      </div>
+              {hospitals.map((hospital) => (
+                <Marker
+                  key={hospital.id}
+                  position={hospital.position}
+                  onClick={() => {
+                    setActiveInfoWindow(hospital.id);
+                    setSelectedHospital(hospital.id);
+                  }}
+                  animation={google?.maps.Animation.DROP}
+                  icon={{
+                    url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                    scaledSize: new google.maps.Size(40, 40),
+                  }}
+                >
+                  {activeInfoWindow === hospital.id && (
+                    <InfoWindow
+                      position={hospital.position}
+                      onCloseClick={() => setActiveInfoWindow(null)}
+                    >
+                      <div className="p-2 max-w-xs">
+                        <h3 className="font-semibold text-lg">{hospital.name}</h3>
+                        <p className="text-sm text-gray-600 mt-1">{hospital.address}</p>
+                        <div className="flex items-center mt-2 text-sm text-gray-600">
+                          <Phone className="h-4 w-4 mr-1" />
+                          {hospital.phone}
+                        </div>
+                        <div className="flex items-center mt-1 text-sm text-gray-600">
+                          <Clock className="h-4 w-4 mr-1" />
+                          {hospital.hours}
+                        </div>
+                        {hospital.websiteUri && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3 w-full"
+                            onClick={() => window.open(hospital.websiteUri, "_blank")}
+                          >
+                            Visit Website
+                          </Button>
+                        )}
+                      </div>
+                    </InfoWindow>
+                  )}
+                </Marker>
+              ))}
+            </GoogleMap>
+          </CardContent>
+        </Card>
 
-      {/* Hospital options */}
-      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-4">
-        {hospitals.map((hospital) => (
-          <button
-            key={hospital.id}
-            className="p-4 bg-slate-100 hover:bg-slate-200 rounded-md text-center transition"
-            onClick={() => handleViewHospital(hospital.id)}
-          >
-            {hospital.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Bottom Buttons */}
-      <div className="flex gap-4 mt-6">
-        <button
-          onClick={handleBack}
-          className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-slate-700 rounded-md transition"
-        >
-          Back
-        </button>
+        {/* Hospital List Section */}
+        <Card className="h-[calc(100vh-2rem)]">
+          <CardHeader className="p-4 border-b">
+            <CardTitle>Hospitals List</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 overflow-y-auto h-[calc(100vh-10rem)]">
+            <Accordion
+              type="single"
+              collapsible
+              value={selectedHospital || undefined}
+              onValueChange={(value) => value && handleHospitalSelect(value)}
+              className="space-y-2"
+            >
+              {hospitals.map((hospital) => (
+                <AccordionItem
+                  key={hospital.id}
+                  value={hospital.id}
+                  className={cn(
+                    "border rounded-lg overflow-hidden",
+                    selectedHospital === hospital.id ? "border-primary shadow-sm" : "border-slate-200",
+                  )}
+                >
+                  <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 [&[data-state=open]]:bg-slate-50">
+                    <div className="flex items-start">
+                      <MapPin className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                      <div className="text-left">
+                        <h3 className="font-medium">{hospital.name}</h3>
+                        <p className="text-sm text-slate-500 mt-0.5">{hospital.address}</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-3 pt-0">
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center">
+                        <Phone className="h-4 w-4 text-slate-500 mr-2" />
+                        <span>{hospital.phone}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 text-slate-500 mr-2" />
+                        <span>{hospital.hours}</span>
+                      </div>
+                      <div className="pt-2">
+                        <h4 className="font-medium mb-1">Specialties</h4>
+                        <ul className="list-disc list-inside text-slate-600 space-y-1">
+                          {hospital.specialties.map((specialty: string, index: number) => (
+                            <li key={index}>{specialty}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      {hospital.websiteUri && (
+                        <Button
+                          className="w-full mt-2"
+                          onClick={() =>
+                            window.open(hospital.websiteUri, "_blank")
+                          }
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Visit Website
+                        </Button>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
-
-export default HospitalMap;
