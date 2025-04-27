@@ -7,7 +7,9 @@ const testNames = [
   "General Hospital",
   "University Medical Center",
   "This Hospital Doesn't Exist",
-  "Thomas Jefferson University Hospital"
+  "Thomas Jefferson University",
+  "Sono Center",
+  "Cotton Medical Center",
 ];
 
 // Run the tests

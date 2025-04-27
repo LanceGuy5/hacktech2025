@@ -27,8 +27,8 @@ export class GoogleWorker {
 
   async nearbyRequest(lat, lng, options = {}) {
     const {
-      radius = 500, // meters
-      includedTypes = ["hospital"],
+      radius = 100000, // meters
+      includedPrimaryTypes = ["hospital"],
       maxResultCount = 5,
       languageCode = "en",
       regionCode = "US",
@@ -36,7 +36,7 @@ export class GoogleWorker {
     } = options;
 
     const body = {
-      includedTypes,
+      includedTypes: includedPrimaryTypes,
       maxResultCount,
       locationRestriction: {
         circle: {
