@@ -1,6 +1,7 @@
 # etl.py
 import pandas as pd
 from sqlalchemy import create_engine
+import numpy as np
 
 # 1. Columns to keep (original names)
 keep = [
@@ -65,6 +66,28 @@ aha_df = aha_df.rename(columns={
     'NICBD':              'icu_neonatal_beds',
     'PEDICBD':            'icu_pediatric_beds'
 })
+
+# 1. Ensure reproducibility
+np.random.seed(42)
+
+# 2. Specify which bed types to simulate load for
+bed_cols = [
+    'total_beds',
+    'icu_med_surg_beds',
+    'icu_neonatal_beds',
+    'icu_pediatric_beds',
+    'burn_care_beds'
+]
+
+# 3. Generate synthetic occupancy data
+for col in bed_cols:
+    # fill na with 0
+    aha_df[col] = aha_df[col].fillna(0)
+    # generate random percentage between 20% and 95%
+    pct = np.clip(np.random.normal(loc=0.6, scale=0.15, size=len(aha_df)), 0.2, 0.95)
+    # Create a new column with the calculated load
+    load = (aha_df[col] * pct).round()
+    aha_df[f'{col}_load'] = load.astype(int)
 
 # 4. Persist to MySQL
 engine = create_engine("mysql+pymysql://root:pass@localhost:3306/hospitals")
