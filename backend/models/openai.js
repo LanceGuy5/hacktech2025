@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { PROMPTS } from "./prompts.js";
 
 // singleton instance of OpenAI
 let instance = null;
@@ -37,7 +38,7 @@ export class OpenAIWorker {
         {
           role: "user",
           content: [
-            { type: "text", text: "Given this image of a medical emergency, describe the condition." },
+            { type: "text", text: PROMPTS.IMAGE },
             {
               type: "image_url",
               image_url: {
@@ -60,8 +61,7 @@ export class OpenAIWorker {
         {
           role: "user",
           content: [
-            { type: "text", text: "Analyze a paragraph describing the symptoms of a user and come up with a list of potential causes." },
-            { type: "text", text: text },
+            { type: "text", text: PROMPTS.SYMPTOM(text) },
           ],
         },
       ],
@@ -82,11 +82,7 @@ export class OpenAIWorker {
           content: [
             {
               type: "text",
-              text: `Analyze the following paragraph *and* the attached image together. 
-  The paragraph describes the symptoms, and the image shows the physical condition. 
-  Give a combined analysis with potential causes.
-  
-  Symptoms description: ${text}`,
+              text: PROMPTS.SYMPTOM_IMAGE(text),
             },
             {
               type: "image_url",

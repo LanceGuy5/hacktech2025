@@ -1,7 +1,7 @@
 
-export async function getLocation() {
+export async function getLocation(): Promise<{ latitude: number; longitude: number; error?: string }> {
   if (!navigator.geolocation) {
-    return { error: 'Geolocation not supported' };
+    return { latitude: 0, longitude: 0, error: 'Geolocation not supported' };
   }
 
   return new Promise((resolve) => {
@@ -14,18 +14,46 @@ export async function getLocation() {
       (error) => {
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            resolve({ error: 'User rejected geolocation.' });
+            resolve({ latitude: 0, longitude: 0, error: 'User rejected geolocation.' });
             break;
           case error.POSITION_UNAVAILABLE:
-            resolve({ error: 'Position unavailable.' });
+            resolve({ latitude: 0, longitude: 0, error: 'Position unavailable.' });
             break;
           case error.TIMEOUT:
-            resolve({ error: 'A timeout error occurred.' });
+            resolve({ latitude: 0, longitude: 0, error: 'A timeout error occurred.' });
             break;
           default:
-            resolve({ error: 'An unknown error occurred.' });
+            resolve({ latitude: 0, longitude: 0, error: 'An unknown error occurred.' });
         }
       }
     );
   });
+}
+
+export function formatAssistantResponse(rawResult: any) {
+  try {
+    let cleaned = rawResult;
+
+    if (typeof cleaned === "string") {
+      // remove leading/trailing backticks and optional 'json' word
+      cleaned = cleaned.trim();
+      if (cleaned.startsWith("```")) {
+        cleaned = cleaned.replace(/^```(?:json)?/, "").replace(/```$/, "").trim();
+      }
+      cleaned = cleaned.trim();
+      cleaned = JSON.parse(cleaned);
+    }
+
+    return {
+      raw: cleaned.raw || "I'm unable to provide specific advice based on the provided input.",
+      severity: typeof cleaned.severity === "number" ? cleaned.severity : null,
+    };
+  } catch (error) {
+    console.warn("Could not parse assistant result as JSON:", error);
+
+    return {
+      raw: typeof rawResult === "string" ? rawResult : "Unknown error occurred.",
+      severity: null,
+    };
+  }
 }

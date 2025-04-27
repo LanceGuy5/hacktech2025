@@ -5,12 +5,13 @@ import React, { useEffect } from "react"
 import { useState, useRef } from "react"
 import axios from "axios"
 // import { useChat } from "ai/react"
-import { Camera, Mic, Send, ImageIcon, X, User, Bot } from "lucide-react"
+import { Camera, Mic, Send, ImageIcon, X, User, Bot, TriangleAlert, MoveRight } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { formatAssistantResponse } from "@/utils/utils"
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<
@@ -24,6 +25,8 @@ export default function ChatPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const [hospitalButton, setHospitalButtom] = useState(false);
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -81,14 +84,20 @@ export default function ChatPage() {
 
       if (response.status !== 200) throw new Error("Server error");
 
+      const formatted = formatAssistantResponse(response.data.result);
+      console.log(formatted);
+
       // Replace loading message with real response
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === loadingMessageId
-            ? { ...msg, content: response.data.result, isLoading: false }
+            ? { ...msg, content: formatted.raw, isLoading: false }
             : msg
         )
       );
+
+      // if the severity is bad enough, show a button to navigate to the map
+      setHospitalButtom(formatted.severity && formatted.severity >= 6);
     } catch (err) {
       console.error("Error:", err);
       setMessages((prev) =>
@@ -100,6 +109,12 @@ export default function ChatPage() {
       );
     }
   };
+
+  const toHospitalMap = () => {
+    console.log("Navigating to hospital map");
+    // Navigate to the hospital map page
+    window.location.href = "/map";
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -224,6 +239,19 @@ export default function ChatPage() {
                 </div>
               </div>
             )}
+            {hospitalButton && (
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  className="group flex items-center justify-center mt-4 bg-red-500 text-white hover:bg-red-600 hover:text-white cursor-pointer transition-all"
+                  onClick={() => toHospitalMap()}
+                >
+                  <TriangleAlert className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Your symptoms may be severe. Find a medical center near you.</span>
+                  <MoveRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </Button>
+              </div>
+            )}
             <div ref={bottomRef} /> {/* dummy ref for auto scrolling */}
           </div>
         </CardContent>
@@ -242,7 +270,7 @@ export default function ChatPage() {
                 <span className="sr-only">Voice input</span>
               </Button>
             </div>
-            <Button type="submit" size="icon" disabled={isTyping && !imagePreview && input.trim() === ""}>
+            <Button className="cursor-pointer" type="submit" size="icon" disabled={isTyping && !imagePreview && input.trim() === ""}>
               <Send className="h-4 w-4" />
               <span className="sr-only">Send message</span>
             </Button>
