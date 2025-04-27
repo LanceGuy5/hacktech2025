@@ -29,6 +29,12 @@ export default function ChatPage() {
   const [hospitalButton, setHospitalButtom] = useState(false);
   const [imageDescriptions, setImageDescriptions] = useState<string[]>([]);
 
+  // for voice recording
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+
   useEffect(() => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
@@ -81,11 +87,11 @@ export default function ChatPage() {
         role: msg.role,
         content: msg.content || ""
       }));
-      
+
       let formData = new FormData();
       if (input.trim() !== "") formData.append("symptoms", input);
       if (selectedFile) formData.append("photo", selectedFile);
-      
+
       // Add conversation history as JSON string
       formData.append("conversationHistory", JSON.stringify(conversationHistory));
 
@@ -138,36 +144,36 @@ export default function ChatPage() {
           image: null
         }
       ]);
-      
+
       // Prepare conversation data
       const conversationText = messages
         .filter(m => m.role === "user" && m.content)
         .map(m => m.content)
         .join("\n");
-      
+
       // Debug what we're sending
       console.log("DEBUG - Sending to generatePatientNeeds:", {
         conversation: conversationText,
         imageDescriptions: imageDescriptions
       });
-      
+
       // Call API to generate patient needs
       const response = await axios.post("/api/generatePatientNeeds", {
         conversation: conversationText,
         imageDescriptions: imageDescriptions
       });
-      
+
       // Debug what we got back
       console.log("DEBUG - Response from generatePatientNeeds:", response.data);
-      
+
       if (response.data && response.data.patientNeeds) {
         // Debug the exact patient needs object
         console.log("DEBUG - Patient needs object:", response.data.patientNeeds);
-        
+
         // Store the structured patient needs
         localStorage.setItem('patientNeeds', JSON.stringify(response.data.patientNeeds));
         console.log("DEBUG - Stored in localStorage:", JSON.stringify(response.data.patientNeeds));
-        
+
         // Navigate to map
         window.location.href = "/map";
       } else {
@@ -207,6 +213,43 @@ export default function ChatPage() {
   const triggerFileInput = () => {
     fileInputRef.current?.click()
   }
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recording.webm");
+        const result = await axios.post("/api/transcribeAudio", formData);
+        console.log(result);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 px-2 py-2">
@@ -336,7 +379,11 @@ export default function ChatPage() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-slate-500 hover:text-slate-900"
+                onClick={isRecording ? stopRecording : startRecording}
+                className={cn(
+                  "absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7",
+                  isRecording ? "text-red-500 animate-pulse" : "text-slate-500 hover:text-slate-900"
+                )}
               >
                 <Mic className="h-4 w-4" />
                 <span className="sr-only">Voice input</span>

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--trace-warnings nodemon --inspect index.js"
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "@googlemaps/places": "^2.0.1",
@@ -19,8 +19,5 @@
     "openai": "^4.96.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
-  },
-  "devDependencies": {
-    "cross-env": "^7.0.3"
   }
 }

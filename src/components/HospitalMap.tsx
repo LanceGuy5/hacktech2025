@@ -32,6 +32,8 @@ export default function HospitalLocatorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showInfo, setShowInfo] = useState<string | null>(null);
 
+  const [userInfoJson, setUserInfoJson] = useState<any>(null);
+
   const mapRef = useRef<google.maps.Map | null>(null);
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
@@ -45,13 +47,17 @@ export default function HospitalLocatorPage() {
       if (error) throw new Error("Unable to get location");
 
       setUserLoc({ lat: latitude, lng: longitude });
-      
+
       // Get patient needs from localStorage
       const storedNeeds = localStorage.getItem('patientNeeds');
       console.log("DEBUG - Retrieved from localStorage:", storedNeeds);
-      
+      if (storedNeeds) {
+        console.log("DEBUG - Patient needs found in localStorage:", storedNeeds);
+        setUserInfoJson(JSON.parse(storedNeeds));
+      }
+
       let url = `/api/getNearbyHospitals?lat=${latitude}&lng=${longitude}`;
-      
+
       // Add patient needs as query param if available
       if (storedNeeds) {
         url += `&patientNeeds=${encodeURIComponent(storedNeeds)}`;
@@ -105,11 +111,10 @@ export default function HospitalLocatorPage() {
         score: hospital.score || null,
         estimated_wait: hospital.estimated_wait || null,
       }));
-      
-      console.log("Mapped hospital data:", data[0]); // Let's look at the first hospital's exact structure
-      
-        // Add any other properties from the ranked hospitals
 
+      console.log("Mapped hospital data:", data[0]); // Let's look at the first hospital's exact structure
+
+      // Add any other properties from the ranked hospitals
 
       setHospitals(data);
       setIsConnected(true);
@@ -155,9 +160,9 @@ export default function HospitalLocatorPage() {
         <Card className="md:col-span-2 overflow-hidden">
           <CardHeader className="p-4 border-b flex justify-between items-center">
             <CardTitle>Nearby Hospitals</CardTitle>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => window.location.href = '/'}
               className="h-8 w-8 p-0"
             >
@@ -201,7 +206,7 @@ export default function HospitalLocatorPage() {
                         <p className="text-sm text-gray-600 mt-1">{hospital.address}</p>
                         <div className="flex items-center">
                           <Clock className="h-4 w-4 text-slate-500 mr-2" />
-                          <span>Estimated Wait: {hospital.estimated_wait ? `${hospital.estimated_wait} min` : 'Unknown'}</span>
+                          <span>Estimated Wait: {hospital.estimated_wait ? `${Math.round(hospital.estimated_wait)} min` : 'Unknown'}</span>
                         </div>
                         <div className="flex items-center mt-2 text-sm text-gray-600">
                           <Phone className="h-4 w-4 mr-1" />
@@ -238,7 +243,9 @@ export default function HospitalLocatorPage() {
           <CardContent className="p-4 overflow-y-auto h-[calc(100vh-10rem)] relative">
             {showInfo && (
               <div className="absolute top-29 right-5 bg-white p-3 rounded-md shadow-md border border-slate-200 z-10 w-64">
-                <p className="text-sm text-slate-700">This hospital was chosen based on your symptoms, expected wait time, and available facilities.</p>
+                <p className="text-sm text-slate-700">{
+                  userInfoJson.explanation
+                }</p>
                 <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowInfo(null)}>Close</Button>
               </div>
             )}
@@ -260,8 +267,8 @@ export default function HospitalLocatorPage() {
                 >
                   {selectedHospital === hospital.id && (
                     <div className="absolute top-20 right-5 z-10">
-                      <Info 
-                        className="h-5 w-5 text-slate-500 cursor-pointer hover:text-primary" 
+                      <Info
+                        className="h-5 w-5 text-slate-500 cursor-pointer hover:text-primary"
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowInfo(showInfo ? null : "recommendation");
@@ -269,7 +276,7 @@ export default function HospitalLocatorPage() {
                       />
                     </div>
                   )}
-                  <AccordionTrigger 
+                  <AccordionTrigger
                     className="px-4 py-3 hover:bg-slate-50 [&[data-state=open]]:bg-slate-50"
                     onClick={(e) => {
                       if (selectedHospital === hospital.id) {
@@ -291,7 +298,7 @@ export default function HospitalLocatorPage() {
                     <div className="space-y-3 text-sm">
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 text-slate-500 mr-2" />
-                        <span>Estimated Wait: {hospital.estimated_wait ? `${hospital.estimated_wait} min` : 'Unknown'}</span>
+                        <span>Estimated Wait: {hospital.estimated_wait ? `${Math.round(hospital.estimated_wait)} min` : 'Unknown'}</span>
                       </div>
                       <div className="flex items-center">
                         <Phone className="h-4 w-4 text-slate-500 mr-2" />
@@ -302,7 +309,7 @@ export default function HospitalLocatorPage() {
                         <span>{hospital.hours}</span>
                       </div>
                       <div className="pt-2">
-                        <h4 className="font-medium mb-1">Recommendation</h4>
+                        <h4 className="font-medium mb-1">Specialties</h4>
                         <ul className="list-disc list-inside text-slate-600 space-y-1">
                           {hospital.specialties.map((specialty: string, index: number) => (
                             <li key={index}>{specialty}</li>

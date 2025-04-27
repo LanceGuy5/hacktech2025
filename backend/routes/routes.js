@@ -3,6 +3,10 @@ import { OpenAIWorker } from "../models/openai.js";
 import { DBWorker } from "../models/database.js";
 import { fetchNearbyHospitals, rankHospitals } from "../src/utils/hospitalHelpers.js";
 
+import { Readable } from "stream";
+import fs from 'fs';
+import path from 'path';
+
 function getHelloWorld(req, res) {
   res.send('Hello World');
 }
@@ -12,7 +16,7 @@ async function postSymptoms(req, res) {
   const { symptoms } = req.body;
   // image exists through middleware -> pull individually through request
   const photo = req.file;
-  
+
   // Parse conversation history
   let conversationHistory = [];
   if (req.body.conversationHistory) {
@@ -143,10 +147,26 @@ async function generatePatientNeeds(req, res) {
   }
 }
 
+async function transcribeVoice(req, res) {
+  const audio = req.file;
+  if (!audio) return res.status(400).json({ error: 'Audio file is required!' });
+  try {
+    // pull openai singleton
+    const openai = new OpenAIWorker({ apiKey: process.env.OPENAI_API_KEY });
+    const text = await openai.transcribeAudio(audio);
+    console.log("DEBUG - Transcription result:", text);
+    res.json({ transcription: text });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
 export {
   getHelloWorld,
   postSymptoms,
   getNearbyHospitals,
   getHospitalById,
-  generatePatientNeeds
+  generatePatientNeeds,
+  transcribeVoice
 }
