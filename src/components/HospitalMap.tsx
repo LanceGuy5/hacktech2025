@@ -47,21 +47,33 @@ export default function HospitalLocatorPage() {
       
       // Get patient needs from localStorage
       const storedNeeds = localStorage.getItem('patientNeeds');
+      console.log("DEBUG - Retrieved from localStorage:", storedNeeds);
+      
       let url = `/api/getNearbyHospitals?lat=${latitude}&lng=${longitude}`;
       
       // Add patient needs as query param if available
       if (storedNeeds) {
         url += `&patientNeeds=${encodeURIComponent(storedNeeds)}`;
+        console.log("DEBUG - URL with patient needs:", url);
+      } else {
+        console.log("DEBUG - No patient needs found in localStorage");
       }
 
+      console.log("DEBUG - Fetching hospitals from:", url);
       const response = await fetch(url);
-      if (!response.ok) throw new Error("Error fetching hospitals");
+      if (!response.ok) {
+        console.error("DEBUG - Error response:", await response.text());
+        throw new Error("Error fetching hospitals");
+      }
 
       let data = await response.json();
-      console.log(data);
+      console.log("DEBUG - Hospital API response:", data);
 
-      // log the data
-      console.log(data);
+      // Check for ranking data
+      if (data.places && data.places.length > 0) {
+        console.log("DEBUG - First hospital score:", data.places[0].score);
+        console.log("DEBUG - First hospital wait time:", data.places[0].estimated_wait);
+      }
 
       data = data.places.map((hospital: any, index: number) => ({
         id: String(index),
@@ -93,7 +105,7 @@ export default function HospitalLocatorPage() {
       setHospitals(data);
       setIsConnected(true);
     } catch (err) {
-      console.error(err);
+      console.error("DEBUG - Error in fetchHospitals:", err);
       setHospitals([]);
     } finally {
       setIsLoading(false);
