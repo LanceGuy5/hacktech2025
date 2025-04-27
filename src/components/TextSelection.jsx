@@ -15,8 +15,13 @@ function TextSelection({ onBack, onNavigateToMap }) {
       timestamp: new Date()
     }
   ])
+  // Image handling states
+  const [showImageOptions, setShowImageOptions] = useState(false)
+  const [selectedImage, setSelectedImage] = useState(null)
+  
   const symptomTextRef = useRef(null)
   const chatContainerRef = useRef(null)
+  const fileInputRef = useRef(null)
   
   // Scroll to bottom of chat when messages change
   useEffect(() => {
@@ -43,6 +48,29 @@ function TextSelection({ onBack, onNavigateToMap }) {
     setShowTextBox(false)
     setApiResponse(null)
     setConversationHistory([])
+  }
+  
+  // Handle image icon click
+  const handleImageIconClick = () => {
+    setShowImageOptions(!showImageOptions)
+  }
+  
+  // Handle file upload
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0]
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setSelectedImage(e.target.result)
+        setShowImageOptions(false)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+  
+  // Trigger file input click
+  const triggerFileUpload = () => {
+    fileInputRef.current.click()
   }
   
   const handleSubmit = async () => {
@@ -107,12 +135,18 @@ function TextSelection({ onBack, onNavigateToMap }) {
   
   // Format chat message with line breaks
   const formatMessageText = (text) => {
+    // Handle cases where text might not be a string
+    if (!text || typeof text !== 'string') {
+      return String(text || '');
+    }
+    
+    // Process string with line breaks
     return text.split('\\n').map((line, i) => (
       <React.Fragment key={i}>
         {line}
         <br />
       </React.Fragment>
-    ))
+    ));
   }
   
   return (
@@ -137,7 +171,33 @@ function TextSelection({ onBack, onNavigateToMap }) {
             <button className="back-option-button" onClick={handleBackToOptions}>
               Back to Options
             </button>
+            <div className="header-icons">
+              <button className="image-icon-button" onClick={handleImageIconClick}>
+                📷
+              </button>
+            </div>
           </div>
+          
+          {/* Image options popup */}
+          {showImageOptions && (
+            <div className="image-options-popup">
+              <div className="image-option-button" onClick={triggerFileUpload}>
+                Upload Image
+              </div>
+              <div className="image-option-button">
+                Take Photo
+              </div>
+              {/* Hidden file input */}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                accept="image/*" 
+                onChange={handleFileUpload}
+              />
+            </div>
+          )}
+          
           
           <div className="chat-container" ref={chatContainerRef}>
             {/* All Messages in sequence */}
@@ -171,7 +231,13 @@ function TextSelection({ onBack, onNavigateToMap }) {
               </div>
             )}
           </div>
-          
+          {/* Image preview area */}
+          {selectedImage && (
+            <div className="image-preview-container">
+              <img src={selectedImage} alt="Uploaded" className="preview-image" />
+              <button className="remove-image-button" onClick={() => setSelectedImage(null)}>×</button>
+            </div>
+          )}
           <div className="chat-input-container">
             <textarea 
               ref={symptomTextRef}

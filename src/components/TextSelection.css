@@ -57,6 +57,7 @@
 .chat-content {
   height: 550px;
   max-height: 70vh;
+  position: relative;
   padding: 0;
   overflow: hidden;
   display: flex;
@@ -73,7 +74,8 @@
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid #444;
 }
 
@@ -85,6 +87,25 @@
 
 .chat-header .back-option-button:hover {
   background-color: #666;
+}
+
+.header-icons {
+  display: flex;
+  align-items: center;
+}
+
+.image-icon-button {
+  background-color: transparent;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.image-icon-button:hover {
+  background-color: #555;
 }
 
 .chat-container {
@@ -286,4 +307,69 @@
   .chat-content {
     height: 450px;
   }
+}
+
+/* Image Options Popup */
+.image-options-popup {
+  position: absolute;
+  top: 50px;
+  right: 10px;
+  background-color: #3f3f3f;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  width: 160px;
+}
+
+.image-option-button {
+  padding: 12px 16px;
+  text-align: center;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.image-option-button:hover {
+  background-color: #555;
+}
+
+.image-option-button:not(:last-child) {
+  border-bottom: 1px solid #4f4f4f;
+}
+
+/* Image Preview Container */
+.image-preview-container {
+  height: 100px;
+  width: 100%;
+  background-color: #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-bottom: 1px solid #444;
+}
+
+.preview-image {
+  max-height: 80px;
+  max-width: 80%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.remove-image-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  width: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
 }
