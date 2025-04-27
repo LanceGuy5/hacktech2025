@@ -75,6 +75,10 @@ async function getNearbyHospitals(req, res) {
     const enhancedHospitals = await Promise.all(googleHospitals.map(async (hospital, index) => {
       // Extract hospital name from Google result
       const hospitalName = hospital.displayName?.text;
+
+      // extract coordinates from google result
+      const lat  = hospital.location?.latitude;
+      const lng  = hospital.location?.longitude;
       
       console.log(`[DEBUG] [${index}] Processing: ${hospitalName || 'UNNAMED'}`);
       
@@ -86,9 +90,8 @@ async function getNearbyHospitals(req, res) {
       
       // Query internal database for matching hospital
       console.log(`[DEBUG] [${index}] Looking up: "${hospitalName}" in database`);
-      // Potential Future Improvement:
-      // - Use coordinates or state instead of just name, in case of multiple hospitals with same name
-      const dbHospital = await db.getHospitalByName(hospitalName);
+      // get matching hospital from database using name and coordinates
+      const dbHospital = await db.getHospitalMatch(hospitalName, lat, lng);
       
       // Combine data from both sources
       if (dbHospital) {
@@ -104,7 +107,25 @@ async function getNearbyHospitals(req, res) {
             has_ed: dbHospital.has_ed,
             is_trauma_center: dbHospital.is_trauma_center,
             trauma_level: dbHospital.trauma_level,
-            // Include any other fields you want to expose
+            name: dbHospital.name,
+            latitude: dbHospital.latitude,
+            longitude: dbHospital.longitude,
+            address: dbHospital.address,
+            city: dbHospital.city,
+            state: dbHospital.state,
+            ct_scanners: dbHospital.ct_scanners,
+            mri_units: dbHospital.mri_units,
+            pet_ct_units: dbHospital.pet_ct_units,
+            ultrasound_units: dbHospital.ultrasound_units,
+            burn_care_beds: dbHospital.burn_care_beds,
+            icu_med_surg_beds: dbHospital.icu_med_surg_beds,
+            icu_neonatal_beds: dbHospital.icu_neonatal_beds,
+            icu_pediatric_beds: dbHospital.icu_pediatric_beds,
+            total_beds_load: dbHospital.total_beds_load,
+            icu_med_surg_beds_load: dbHospital.icu_med_surg_beds_load,
+            icu_neonatal_beds_load: dbHospital.icu_neonatal_beds_load,
+            icu_pediatric_beds_load: dbHospital.icu_pediatric_beds_load,
+            burn_care_beds_load: dbHospital.burn_care_beds_load
           }
         };
       }

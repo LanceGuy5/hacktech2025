@@ -7,7 +7,7 @@ export class DBWorker {
     if (instance) {
       return instance;
     }
-    
+
     // You could pass custom DB config here if needed
     this.pool = pool;
     instance = this;
@@ -15,7 +15,9 @@ export class DBWorker {
 
   static getInstance() {
     if (!instance) {
-      throw new Error("DBWorker instance not created yet. Use 'new DBWorker()' first.");
+      throw new Error(
+        "DBWorker instance not created yet. Use 'new DBWorker()' first."
+      );
     }
     return instance;
   }
@@ -35,11 +37,7 @@ export class DBWorker {
    * @returns {Promise<Array>} - Array of hospital objects
    */
   async findNearbyHospitals(lat, lng, options = {}) {
-    const {
-      maxDistanceKm = 10,
-      minBeds = 0,
-      limit = 50
-    } = options;
+    const { maxDistanceKm = 10, minBeds = 0, limit = 50 } = options;
 
     const sql = `
       SELECT hospital_id, name, latitude, longitude, total_beds, 
@@ -54,13 +52,19 @@ export class DBWorker {
       ORDER BY total_beds DESC
       LIMIT ?
     `;
-    
+
     const maxMeters = maxDistanceKm * 1000;
-    const [rows] = await this.pool.query(sql, [minBeds, lng, lat, maxMeters, limit]);
-    
+    const [rows] = await this.pool.query(sql, [
+      minBeds,
+      lng,
+      lat,
+      maxMeters,
+      limit,
+    ]);
+
     return rows;
   }
-  
+
   /**
    * Get hospital details by ID
    * @param {string} hospitalId - Hospital ID
@@ -73,31 +77,46 @@ export class DBWorker {
              has_ed, is_trauma_center, trauma_level,
              ct_scanners, ct_multislice_lt64, ct_multislice_gte64, mri_units, 
              pet_ct_units, spect_units, ultrasound_units,
-             burn_care_beds, icu_med_surg_beds, icu_neonatal_beds, icu_pediatric_beds
+             burn_care_beds, icu_med_surg_beds, icu_neonatal_beds, icu_pediatric_beds,
+             total_beds_load, icu_med_surg_beds_load, icu_neonatal_beds_load,
+             icu_pediatric_beds_load, burn_care_beds_load
       FROM aha_hospitals
       WHERE hospital_id = ?
     `;
-    
+
     const [rows] = await this.pool.query(sql, [hospitalId]);
     return rows.length ? rows[0] : null;
   }
+  
   /**
    * Find hospitals by name using fuzzy matching
    * @param {string} name - Hospital name to search for
    * @param {Object} options - Search options
+   * @param {number} lat - Latitude
+   * @param {number} lng - Longitude
    * @param {number} [options.limit=1] - Maximum number of results
+   * @param {number} [options.maxDistanceKm=10] - Maximum distance in kilometers from the search location
    * @returns {Promise<Object|null>} - Best matching hospital or null if none found
    */
-  async getHospitalByName(name, options = {}) {
-    const { limit = 1 } = options;
-    
+  async getHospitalMatch(name, lat, lng, options = {}) {
+    const { limit = 1, maxDistanceKm = 10 } = options;
+    const maxMeters = maxDistanceKm * 1000;
+
     // Using LIKE with prepared statements to prevent SQL injection
     const sql = `
       SELECT hospital_id, name, latitude, longitude, total_beds, 
              address, city, state, zip_code,
-             has_ed, is_trauma_center, trauma_level
+             has_ed, is_trauma_center, trauma_level,
+             ct_scanners, mri_units, pet_ct_units, ultrasound_units,
+             burn_care_beds, icu_med_surg_beds, icu_neonatal_beds, icu_pediatric_beds,
+             total_beds_load, icu_med_surg_beds_load, icu_neonatal_beds_load,
+             icu_pediatric_beds_load, burn_care_beds_load
       FROM aha_hospitals
       WHERE name LIKE ?
+        AND ST_Distance_Sphere(
+              POINT(longitude, latitude),
+              POINT(?, ?)
+            ) <= ?
       ORDER BY CASE 
                WHEN name = ? THEN 0  -- Exact match gets highest priority
                WHEN name LIKE ? THEN 1  -- Starts with the term
@@ -106,17 +125,21 @@ export class DBWorker {
                LENGTH(name) ASC  -- Shorter names ranked higher when match quality is equal
       LIMIT ?
     `;
-    
+
+    // Execute the query; pass in the name, longitude, latitude, max distance, and limit 
+    // (replaces ? in the sql query)
     const [rows] = await this.pool.query(sql, [
-      `%${name}%`,       // LIKE pattern for contains
-      name,              // Exact match
-      `${name}%`,        // Starts with pattern
-      limit
+      `%${name}%`, // LIKE pattern for contains
+      lng,
+      lat,
+      maxMeters,
+      name, // Exact match
+      `${name}%`, // Starts with pattern
+      limit,
     ]);
-    
+
     // Return null if no matches, otherwise return the top match or all results
     if (rows.length === 0) return null;
     return limit === 1 ? rows[0] : rows;
   }
 }
-

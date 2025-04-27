@@ -22,7 +22,7 @@ async function runTests() {
     
     for (const name of testNames) {
       console.log(`\nTesting: "${name}"`);
-      const result = await db.getHospitalByName(name);
+      const result = await db.getHospitalMatch(name);
       
       if (result) {
         console.log(`✅ MATCHED WITH: ${result.name} (ID: ${result.hospital_id})`);
