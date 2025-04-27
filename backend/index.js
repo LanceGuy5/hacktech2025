@@ -11,15 +11,15 @@ const app = express();
 console.log('Running in development mode');
 app.use(express.json());
 
-// pool.getConnection()
-//   .then(conn => {
-//     console.log('✅ Connected to MySQL');
-//     conn.release();
-//   })
-//   .catch(err => {
-//     console.error('❌ MySQL connection failed:', err);
-//     process.exit(1);  // quit if you can’t talk to your DB
-//   });
+pool.getConnection()
+  .then(conn => {
+    console.log('✅ Connected to MySQL');
+    conn.release();
+  })
+  .catch(err => {
+    console.error('❌ MySQL connection failed:', err);
+    process.exit(1);  // quit if you can’t talk to your DB
+  });
 
 register_routes(app);
 console.log('✅ Routes registered');

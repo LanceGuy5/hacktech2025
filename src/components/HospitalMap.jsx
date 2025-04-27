@@ -1,16 +1,8 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import './HospitalMap.css'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api'
-
-// For real use, get this from an environment variable
-const GOOGLE_MAPS_API_KEY = "YOUR_API_KEY" // Replace with your actual API key
-
-// Default map center (can be adjusted)
-const defaultCenter = {
-  lat: 34.0522, // Los Angeles
-  lng: -118.2437
-}
+import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from '@react-google-maps/api'
+import { getLocation } from '../utils/utils'
 
 // Map container style
 const mapContainerStyle = {
@@ -19,24 +11,64 @@ const mapContainerStyle = {
   borderRadius: '8px'
 }
 
-// Example hospital locations - you would replace these with data from Places API
-const hospitals = [
-  { id: 1, name: "Memorial Hospital", position: { lat: 34.052, lng: -118.243 } },
-  { id: 2, name: "City Medical Center", position: { lat: 34.055, lng: -118.248 } },
-  { id: 3, name: "Community Healthcare", position: { lat: 34.058, lng: -118.238 } }
-]
-
 function HospitalMap() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [userLoc, setUserLoc] = useState({ lat: 0, lng: 0 });
+  const [isConnected, setIsConnected] = useState(false);
   const [selectedHospital, setSelectedHospital] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
   const mapRef = useRef(null)
 
-  // Load the Google Maps JavaScript API
+  const [hospitals, setHospitals] = useState([]);
+
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: ['places']
-  })
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_API_KEY, // safely restricted key
+    libraries: ['places'], // optional if you use autocomplete later
+  });
+
+  const getLocations = async () => {
+    setIsLoading(true);
+    try {
+      const { latitude, longitude } = await getLocation();
+      if (!latitude || !longitude) {
+        console.error('Unable to get location');
+        setIsLoading(false);
+        return;
+      }
+      setUserLoc({ lat: latitude, lng: longitude });
+      const response = await fetch(`/api/getNearbyHospitals?lat=${latitude}&lng=${longitude}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+      });
+      if (!response.ok) {
+        console.error('Error fetching locations:', response.statusText)
+        setIsLoading(false);
+        return;
+      }
+      let data = await response.json();
+      data = data.map((hospital, index) => ({
+        id: index,
+        name: hospital.displayName.text,
+        position: {
+          lat: hospital.location.latitude,
+          lng: hospital.location.longitude
+        },
+        status: hospital.businessStatus,
+        // website: hospital.websiteUri,
+      }));
+      console.log(data);
+      setHospitals(data);
+      setIsConnected(true);
+    } catch (error) {
+      console.error('Error fetching locations:', error)
+      setHospitals([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   const handleBack = () => {
     // Check if we have state information about where we came from
@@ -69,11 +101,38 @@ function HospitalMap() {
     }
   }
 
-  // Render map error
-  if (loadError) return <div>Error loading maps</div>
+  if (!isLoaded) {
+    return (
+      <div className='hospital-map'>
+        <h2>Loading Google Maps...</h2>
+      </div>
+    );
+  }
 
-  // Render loading state
-  if (!isLoaded) return <div>Loading maps...</div>
+  if (loadError) {
+    return (
+      <div className='hospital-map'>
+        <h2>Error Loading Google Maps</h2>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className='hospital-map'>
+        <h2>Loading hospitals...</h2>
+      </div>
+    )
+  }
+
+  if (!isConnected) {
+    return (
+      <div className='hospital-map'>
+        <h2>Hospital Map</h2>
+        <button onClick={() => getLocations()}>Find hospitals near me</button>
+      </div>
+    );
+  }
 
   return (
     <div className='map-container'>
@@ -81,7 +140,7 @@ function HospitalMap() {
       <div className="google-map-container">
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
-          center={defaultCenter}
+          center={userLoc}
           zoom={13}
           onLoad={onMapLoad}
         >
@@ -89,7 +148,7 @@ function HospitalMap() {
           {hospitals.map(hospital => (
             <Marker
               key={hospital.id}
-              position={hospital.position}
+              position={{ lat: hospital.position.lat, lng: hospital.position.lng }}
               onClick={() => handleMarkerClick(hospital)}
             />
           ))}
@@ -120,7 +179,7 @@ function HospitalMap() {
           <button className='map-btn direct-btn'>Direct</button>
         </div>
       </div>
-    </div>
+    </div >
   )
 }
 
