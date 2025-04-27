@@ -30,73 +30,121 @@ export class OpenAIWorker {
   }
 
   // for sending just an image to OpenAI model
-  sendImage = async function (image) {
+  sendImage = async function (image, conversationHistory = []) {
     const b64Img = image.buffer.toString("base64");
-    const response = await this.openai.chat.completions.create({
-      model: this.model,
-      messages: [
+    
+    // Convert conversation history
+    const messages = conversationHistory.map(msg => ({
+      role: msg.role,
+      content: msg.content || ""
+    }));
+    
+    // Add current user message
+    messages.push({
+      role: "user",
+      content: [
+        { type: "text", text: PROMPTS.IMAGE },
         {
-          role: "user",
-          content: [
-            { type: "text", text: PROMPTS.IMAGE },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:${image.mimetype};base64,${b64Img}`,
-              },
-            },
-          ],
+          type: "image_url",
+          image_url: {
+            url: `data:${image.mimetype};base64,${b64Img}`,
+          },
         },
       ],
+    });
+    
+    const response = await this.openai.chat.completions.create({
+      model: this.model,
+      messages: messages,
       max_tokens: 300,
     });
-    return (response.choices[0].message.content);
+    
+    return response.choices[0].message.content;
   }
 
   // for sending just a text description to OpenAI model
-  sendText = async function (text) {
+  sendText = async function (text, conversationHistory = []) {
+    // Ensure conversationHistory is an array
+    const history = Array.isArray(conversationHistory) ? conversationHistory : [];
+    
+    // Convert our conversation history to OpenAI format
+    const messages = history.map(msg => ({
+      role: msg.role || "user",
+      content: msg.content || ""
+    }));
+    
+    // Add the current user prompt with the symptoms template
+    messages.push({
+      role: "user",
+      content: [
+        { type: "text", text: PROMPTS.SYMPTOM(text) }
+      ]
+    });
+    
     const response = await this.openai.chat.completions.create({
       model: this.model,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: PROMPTS.SYMPTOM(text) },
-          ],
-        },
-      ],
+      messages: messages,
       max_tokens: 300,
     });
-    return (response.choices[0].message.content);
+    
+    return response.choices[0].message.content;
   }
 
   // for sending both a text description and an image to OpenAI model
-  sendTextWithImage = async function (text, image) {
+  sendTextWithImage = async function (text, image, conversationHistory = []) {
     const b64Img = image.buffer.toString("base64");
-
-    const response = await this.openai.chat.completions.create({
-      model: this.model,
-      messages: [
+    
+    // Convert conversation history
+    const messages = conversationHistory.map(msg => ({
+      role: msg.role,
+      content: msg.content || ""
+    }));
+    
+    // Add current user message
+    messages.push({
+      role: "user",
+      content: [
         {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: PROMPTS.SYMPTOM_IMAGE(text),
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:${image.mimetype};base64,${b64Img}`,
-              },
-            },
-          ],
+          type: "text",
+          text: PROMPTS.SYMPTOM_IMAGE(text),
+        },
+        {
+          type: "image_url",
+          image_url: {
+            url: `data:${image.mimetype};base64,${b64Img}`,
+          },
         },
       ],
+    });
+    
+    const response = await this.openai.chat.completions.create({
+      model: this.model,
+      messages: messages,
       max_tokens: 300,
     });
 
     return response.choices[0].message.content;
   };
+
+  async generatePatientNeeds(conversation, imageDescriptions = []) {
+    const prompt = PROMPTS.GENERATE_PATIENT_NEEDS(conversation, imageDescriptions);
+    
+    const response = await this.openai.chat.completions.create({
+      // TODO - determine which model to use
+      model: "gpt-4-turbo", 
+      messages: [
+        { role: "system", content: prompt }
+      ],
+      temperature: 0.2, // Lower for more consistent structured data
+    });
+
+    try {
+      // Parse the JSON response
+      return JSON.parse(response.choices[0].message.content);
+    } catch (error) {
+      console.error('Error parsing response:', error);
+      throw new Error('Failed to generate valid patient needs data');
+    }
+  }
 }
 

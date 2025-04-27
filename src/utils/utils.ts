@@ -1,4 +1,3 @@
-
 export async function getLocation(): Promise<{ latitude: number; longitude: number; error?: string }> {
   if (!navigator.geolocation) {
     return { latitude: 0, longitude: 0, error: 'Geolocation not supported' };
@@ -47,6 +46,7 @@ export function formatAssistantResponse(rawResult: any) {
     return {
       raw: cleaned.raw || "I'm unable to provide specific advice based on the provided input.",
       severity: typeof cleaned.severity === "number" ? cleaned.severity : null,
+      imageDescription: cleaned.imageDescription || null,
     };
   } catch (error) {
     console.warn("Could not parse assistant result as JSON:", error);
@@ -54,6 +54,7 @@ export function formatAssistantResponse(rawResult: any) {
     return {
       raw: typeof rawResult === "string" ? rawResult : "Unknown error occurred.",
       severity: null,
+      imageDescription: null,
     };
   }
 }

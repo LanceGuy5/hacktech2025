@@ -12,6 +12,17 @@ async function postSymptoms(req, res) {
   const { symptoms } = req.body;
   // image exists through middleware -> pull individually through request
   const photo = req.file;
+  
+  // Parse conversation history
+  let conversationHistory = [];
+  if (req.body.conversationHistory) {
+    try {
+      conversationHistory = JSON.parse(req.body.conversationHistory);
+    } catch (e) {
+      console.error('Error parsing conversation history:', e);
+      // Continue with empty history if parsing fails
+    }
+  }
 
   // need at least one of these to proceed
   if (!symptoms && !photo) {
@@ -29,13 +40,13 @@ async function postSymptoms(req, res) {
   try {
     if (symptoms && photo) {
       console.log('Both symptoms and photo provided');
-      const textResponse = await openai.sendTextWithImage(symptoms, photo);
+      const textResponse = await openai.sendTextWithImage(symptoms, photo, conversationHistory);
       return res.status(200).json({ result: textResponse });
     } else if (symptoms) {
-      const symptomsResponse = await openai.sendText(symptoms);
+      const symptomsResponse = await openai.sendText(symptoms, conversationHistory);
       return res.status(200).json({ result: symptomsResponse });
     } else if (photo) {
-      const imageResponse = await openai.sendImage(photo);
+      const imageResponse = await openai.sendImage(photo, conversationHistory);
       return res.status(200).json({ result: imageResponse });
     }
   } catch (error) {
@@ -101,9 +112,33 @@ async function getHospitalById(req, res) {
   }
 }
 
+async function generatePatientNeeds(req, res) {
+  const { conversation, imageDescriptions = [] } = req.body;
+  
+  if (!conversation) {
+    return res.status(400).json({ error: 'Conversation is required!' });
+  }
+
+  // pull openai singleton
+  const openai = new OpenAIWorker({ apiKey: process.env.OPENAI_API_KEY });
+  if (!openai) {
+    return res.status(500).json({ error: 'OpenAI instance not initialized!' });
+  }
+
+  try {
+    // Generate patient needs based on conversation and image descriptions
+    const patientNeeds = await openai.generatePatientNeeds(conversation, imageDescriptions);
+    return res.status(200).json({ patientNeeds });
+  } catch (error) {
+    console.error('Error generating patient needs:', error);
+    return res.status(500).json({ error: 'Error generating patient needs: ' + error.message });
+  }
+}
+
 export {
   getHelloWorld,
   postSymptoms,
   getNearbyHospitals,
-  getHospitalById
+  getHospitalById,
+  generatePatientNeeds
 }

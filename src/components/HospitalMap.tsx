@@ -44,12 +44,25 @@ export default function HospitalLocatorPage() {
       if (error) throw new Error("Unable to get location");
 
       setUserLoc({ lat: latitude, lng: longitude });
+      
+      // Get patient needs from localStorage
+      const storedNeeds = localStorage.getItem('patientNeeds');
+      let url = `/api/getNearbyHospitals?lat=${latitude}&lng=${longitude}`;
+      
+      // Add patient needs as query param if available
+      if (storedNeeds) {
+        url += `&patientNeeds=${encodeURIComponent(storedNeeds)}`;
+      }
 
-      const response = await fetch(`/api/getNearbyHospitals?lat=${latitude}&lng=${longitude}`);
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Error fetching hospitals");
 
       let data = await response.json();
       console.log(data);
+
+      // log the data
+      console.log(data);
+
       data = data.places.map((hospital: any, index: number) => ({
         id: String(index),
         name: hospital.displayName.text,
@@ -68,10 +81,15 @@ export default function HospitalLocatorPage() {
         has_pet_ct: hospital.internal_data.has_pet_ct || false,
         total_beds: hospital.internal_data.total_beds || 0,
         total_beds_load: hospital.internal_data.total_beds_load || 0,
+        score: hospital.score || null,
+        estimated_wait: hospital.estimated_wait || null,
       }));
       
       console.log("Mapped hospital data:", data[0]); // Let's look at the first hospital's exact structure
       
+        // Add any other properties from the ranked hospitals
+
+
       setHospitals(data);
       setIsConnected(true);
     } catch (err) {
