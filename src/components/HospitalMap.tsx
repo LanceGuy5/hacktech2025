@@ -84,30 +84,30 @@ export default function HospitalLocatorPage() {
 
       data = data.places.map((hospital: any, index: number) => ({
         id: String(index),
-        name: hospital.displayName.text,
+        name: hospital.displayName?.text || "Unknown Hospital",
         position: {
-          lat: hospital.location.latitude,
-          lng: hospital.location.longitude,
+          lat: hospital.location?.latitude || 0,
+          lng: hospital.location?.longitude || 0,
         },
         address: hospital.formattedAddress || "Address not available",
         phone: hospital.nationalPhoneNumber || "Phone not available",
         hours: "Open 24/7", // Could be smarter if API gives real hours
         specialties: ["General Healthcare"], // Placeholder, unless API returns specialties
         websiteUri: hospital.websiteUri || null,
-        has_ct: hospital.internal_data.has_ct || false,
-        has_mri: hospital.internal_data.has_mri || false,
-        has_ultrasound: hospital.internal_data.has_ultrasound || false,
-        has_pet_ct: hospital.internal_data.has_pet_ct || false,
-        has_ed: hospital.internal_data.has_ed || false,
-        is_trauma_center: hospital.internal_data.is_trauma_center || false,
-        total_beds: hospital.internal_data.total_beds || 0,
-        total_beds_load: hospital.internal_data.total_beds_load || 0,
-        icu_med_surg_beds: hospital.internal_data.icu_med_surg_beds || 0,
-        icu_med_surg_beds_load: hospital.internal_data.icu_med_surg_beds_load || 0,
-        icu_pediatric_beds: hospital.internal_data.icu_pediatric_beds || 0,
-        icu_pediatric_beds_load: hospital.internal_data.icu_pediatric_beds_load || 0,
-        icu_neonatal_beds: hospital.internal_data.icu_neonatal_beds || 0,
-        icu_neonatal_beds_load: hospital.internal_data.icu_neonatal_beds_load || 0,
+        has_ct: hospital.internal_data?.has_ct || false,
+        has_mri: hospital.internal_data?.has_mri || false,
+        has_ultrasound: hospital.internal_data?.has_ultrasound || false,
+        has_pet_ct: hospital.internal_data?.has_pet_ct || false,
+        has_ed: hospital.internal_data?.has_ed || false,
+        is_trauma_center: hospital.internal_data?.is_trauma_center || false,
+        total_beds: hospital.internal_data?.total_beds || 0,
+        total_beds_load: hospital.internal_data?.total_beds_load || 0,
+        icu_med_surg_beds: hospital.internal_data?.icu_med_surg_beds || 0,
+        icu_med_surg_beds_load: hospital.internal_data?.icu_med_surg_beds_load || 0,
+        icu_pediatric_beds: hospital.internal_data?.icu_pediatric_beds || 0,
+        icu_pediatric_beds_load: hospital.internal_data?.icu_pediatric_beds_load || 0,
+        icu_neonatal_beds: hospital.internal_data?.icu_neonatal_beds || 0,
+        icu_neonatal_beds_load: hospital.internal_data?.icu_neonatal_beds_load || 0,
         score: hospital.score || null,
         estimated_wait: hospital.estimated_wait || null,
       }));
@@ -339,7 +339,7 @@ export default function HospitalLocatorPage() {
                           <div>ICU Beds: {Math.max(0, (hospital.icu_med_surg_beds || 0) - (hospital.icu_med_surg_beds_load || 0))}</div>
                           <div>Pediatric ICU Beds: {Math.max(0, (hospital.icu_pediatric_beds || 0) - (hospital.icu_pediatric_beds_load || 0))}</div>
                           <div>Neonatal ICU Beds: {Math.max(0, (hospital.icu_neonatal_beds || 0) - (hospital.icu_neonatal_beds_load || 0))}</div>
-                          <div>Total Beds: {Math.max(0, (hospital.total_beds || 0) - (hospital.total_beds_load || 0))}</div>
+                          <div>Open Beds: {Math.max(0, (hospital.total_beds || 0) - (hospital.total_beds_load || 0))}</div>
                         </div>
                       </div>
                       {hospital.websiteUri && (
