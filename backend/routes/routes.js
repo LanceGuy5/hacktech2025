@@ -56,15 +56,79 @@ async function getNearbyHospitals(req, res) {
   }
 
   try {
-    const hospitals = await google.nearbyRequest(lat, lng, {
-      radius: 1000,
-      includedTypes: ["hospital"],
-      maxResultCount: 10,
-      fieldMask: "places.displayName,places.location,places.businessStatus",
+    console.log(`[DEBUG] Starting hospital lookup for lat=${lat}, lng=${lng}`);
+    
+    // 1. Get nearby hospitals from Google API
+    const googleHospitals = await google.nearbyRequest(lat, lng, {});
+    
+    console.log(`[DEBUG] Google API returned ${googleHospitals.length || 0} hospitals`);
+    
+    // 2. Get database instance
+    const db = new DBWorker();
+    
+    // Track matching stats for debugging
+    let matchCount = 0;
+    let missingNameCount = 0;
+    let noMatchCount = 0;
+    
+    // 3. Enhance each Google result with database information
+    const enhancedHospitals = await Promise.all(googleHospitals.map(async (hospital, index) => {
+      // Extract hospital name from Google result
+      const hospitalName = hospital.displayName?.text;
+      
+      console.log(`[DEBUG] [${index}] Processing: ${hospitalName || 'UNNAMED'}`);
+      
+      if (!hospitalName) {
+        missingNameCount++;
+        console.log(`[DEBUG] [${index}] Skipping lookup - no hospital name available`);
+        return hospital; // Return unmodified if no name available
+      }
+      
+      // Query internal database for matching hospital
+      console.log(`[DEBUG] [${index}] Looking up: "${hospitalName}" in database`);
+      // Potential Future Improvement:
+      // - Use coordinates or state instead of just name, in case of multiple hospitals with same name
+      const dbHospital = await db.getHospitalByName(hospitalName);
+      
+      // Combine data from both sources
+      if (dbHospital) {
+        matchCount++;
+        console.log(`[DEBUG] [${index}] ✅ MATCH FOUND: ${dbHospital.name} (ID: ${dbHospital.hospital_id})`);
+        console.log(`[DEBUG] [${index}] Match details: ${dbHospital.total_beds} beds, ED: ${dbHospital.has_ed ? 'Yes' : 'No'}, Trauma: ${dbHospital.is_trauma_center ? 'Yes' : 'No'}`);
+        
+        return {
+          ...hospital,
+          internal_data: {
+            hospital_id: dbHospital.hospital_id,
+            total_beds: dbHospital.total_beds,
+            has_ed: dbHospital.has_ed,
+            is_trauma_center: dbHospital.is_trauma_center,
+            trauma_level: dbHospital.trauma_level,
+            // Include any other fields you want to expose
+          }
+        };
+      }
+      
+      // Return original data if no matching record in database
+      noMatchCount++;
+      console.log(`[DEBUG] [${index}] ❌ NO MATCH FOUND for "${hospitalName}"`);
+      return hospital;
+    }));
+    
+    console.log(`[DEBUG] Summary: ${googleHospitals.length} total, ${matchCount} matched, ${noMatchCount} no match, ${missingNameCount} missing name`);
+    
+    return res.status(200).json({
+      places: enhancedHospitals,
+      debug: {
+        total: googleHospitals.length,
+        matched: matchCount,
+        noMatch: noMatchCount,
+        missingName: missingNameCount
+      }
     });
-    return res.status(200).json(hospitals);
+    
   } catch (error) {
-    console.error('Error fetching nearby hospitals:', error);
+    console.error('[DEBUG] ERROR in getNearbyHospitals:', error);
     return res.status(500).json({ error: 'Error fetching nearby hospitals: ' + error.message });
   }
 }
