@@ -68,10 +68,10 @@ export async function fetchNearbyHospitals(lat, lng) {
           address: dbHospital.address,
           city: dbHospital.city,
           state: dbHospital.state,
-          ct_scanners: dbHospital.ct_scanners,
-          mri_units: dbHospital.mri_units,
-          pet_ct_units: dbHospital.pet_ct_units,
-          ultrasound_units: dbHospital.ultrasound_units,
+          has_ct: dbHospital.has_ct,
+          has_mri: dbHospital.has_mri,
+          has_pet_ct: dbHospital.has_pet_ct,
+          has_ultrasound: dbHospital.has_ultrasound,
           burn_care_beds: dbHospital.burn_care_beds,
           icu_med_surg_beds: dbHospital.icu_med_surg_beds,
           icu_neonatal_beds: dbHospital.icu_neonatal_beds,
@@ -132,34 +132,67 @@ export function rankHospitals(hospitals, patientNeeds) {
       // Trauma cases
       if (patientNeeds.isTrauma && data.is_trauma_center) {
         score += 50;
-        // Add bonus for appropriate trauma level
-        if (patientNeeds.traumaSeverity === 'severe' && data.trauma_level <= 2) {
-          score += 30;
+        
+        // Adjust score based on recommended trauma level
+        if (patientNeeds.recommendedTraumaLevel && data.trauma_level) {
+          // Perfect match
+          if (data.trauma_level === patientNeeds.recommendedTraumaLevel) {
+            score += 50;
+          }
+          // Better than recommended (lower number = higher capability)
+          else if (data.trauma_level < patientNeeds.recommendedTraumaLevel) {
+            score += 40;
+          }
+          // One level below recommended
+          else if (data.trauma_level === patientNeeds.recommendedTraumaLevel + 1) {
+            score += 20;
+          }
+          // Two levels below recommended 
+          else if (data.trauma_level === patientNeeds.recommendedTraumaLevel + 2) {
+            score += 10;
+          }
+          // More than two levels below recommended - no bonus
         }
       }
       
-      // Need for specific equipment
-      if (patientNeeds.needsMRI && data.mri_units > 0) {
-        score += 20 * (1 - (data.mri_units_load || 0.5));
+      // Need for specific equipment (now using boolean flags)
+      if (patientNeeds.needsMRI && data.has_mri) {
+        score += 20; // Fixed score for having the equipment
       }
       
-      if (patientNeeds.needsCTScan && data.ct_scanners > 0) {
-        score += 20 * (1 - (data.ct_scanners_load || 0.5));
+      if (patientNeeds.needsCTScan && data.has_ct) {
+        score += 20;
       }
-      
+
+      if (patientNeeds.needsUltrasound && data.has_ultrasound) {
+        score += 20;
+      }
+
+      if (patientNeeds.needsPetCT && data.has_pet_ct) {
+        score += 20;
+      }
+
       // Special care needs
-      if (patientNeeds.needsICU && data.icu_med_surg_beds > 0) {
-        score += 30 * (1 - (data.icu_med_surg_beds_load || 0.5));
-      }
-      
-      if (patientNeeds.needsBurnUnit && data.burn_care_beds > 0) {
-        score += 40 * (1 - (data.burn_care_beds_load || 0.5));
+      if (patientNeeds.needsSurgicalICU && data.icu_med_surg_beds > 0) {
+        const availableICUBeds = data.icu_med_surg_beds - (data.icu_med_surg_beds_load || 0);
+        const availabilityRatio = availableICUBeds / data.icu_med_surg_beds;
+        score += 30 * Math.max(0, availabilityRatio);
       }
       
       // Pediatric needs
-      if (patientNeeds.isPediatric && data.icu_pediatric_beds > 0) {
-        score += 30 * (1 - (data.icu_pediatric_beds_load || 0.5));
+      if (patientNeeds.needsPediatricICU && data.icu_pediatric_beds > 0) {
+        const availablePedBeds = data.icu_pediatric_beds - (data.icu_pediatric_beds_load || 0);
+        const availabilityRatio = availablePedBeds / data.icu_pediatric_beds;
+        score += 30 * Math.max(0, availabilityRatio);
       }
+
+      // Neonatal needs
+      if (patientNeeds.needsNeonatalICU && data.icu_neonatal_beds > 0) {
+        const availableNeonatalBeds = data.icu_neonatal_beds - (data.icu_neonatal_beds_load || 0);
+        const availabilityRatio = availableNeonatalBeds / data.icu_neonatal_beds;
+        score += 30 * Math.max(0, availabilityRatio);
+      }
+      
     }
     
     // Calculate estimated wait time (simplified example)

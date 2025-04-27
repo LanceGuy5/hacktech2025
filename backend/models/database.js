@@ -75,8 +75,7 @@ export class DBWorker {
       SELECT hospital_id, name, latitude, longitude, total_beds, 
              address, city, state, zip_code,
              has_ed, is_trauma_center, trauma_level,
-             ct_scanners, ct_multislice_lt64, ct_multislice_gte64, mri_units, 
-             pet_ct_units, spect_units, ultrasound_units,
+             has_ct, has_mri, has_pet_ct, has_ultrasound,
              burn_care_beds, icu_med_surg_beds, icu_neonatal_beds, icu_pediatric_beds,
              total_beds_load, icu_med_surg_beds_load, icu_neonatal_beds_load,
              icu_pediatric_beds_load, burn_care_beds_load
@@ -107,7 +106,7 @@ export class DBWorker {
       SELECT hospital_id, name, latitude, longitude, total_beds, 
              address, city, state, zip_code,
              has_ed, is_trauma_center, trauma_level,
-             ct_scanners, mri_units, pet_ct_units, ultrasound_units,
+             has_ct, has_mri, has_pet_ct, has_ultrasound,
              burn_care_beds, icu_med_surg_beds, icu_neonatal_beds, icu_pediatric_beds,
              total_beds_load, icu_med_surg_beds_load, icu_neonatal_beds_load,
              icu_pediatric_beds_load, burn_care_beds_load
