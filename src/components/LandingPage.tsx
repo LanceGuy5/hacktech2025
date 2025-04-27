@@ -145,15 +145,28 @@ export default function ChatPage() {
         .map(m => m.content)
         .join("\n");
       
+      // Debug what we're sending
+      console.log("DEBUG - Sending to generatePatientNeeds:", {
+        conversation: conversationText,
+        imageDescriptions: imageDescriptions
+      });
+      
       // Call API to generate patient needs
       const response = await axios.post("/api/generatePatientNeeds", {
         conversation: conversationText,
         imageDescriptions: imageDescriptions
       });
       
+      // Debug what we got back
+      console.log("DEBUG - Response from generatePatientNeeds:", response.data);
+      
       if (response.data && response.data.patientNeeds) {
+        // Debug the exact patient needs object
+        console.log("DEBUG - Patient needs object:", response.data.patientNeeds);
+        
         // Store the structured patient needs
         localStorage.setItem('patientNeeds', JSON.stringify(response.data.patientNeeds));
+        console.log("DEBUG - Stored in localStorage:", JSON.stringify(response.data.patientNeeds));
         
         // Navigate to map
         window.location.href = "/map";
@@ -161,7 +174,7 @@ export default function ChatPage() {
         throw new Error("Failed to generate patient needs");
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error in toHospitalMap:", error);
       // Show error message
       setMessages(prev => [
         ...prev,

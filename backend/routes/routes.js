@@ -114,20 +114,28 @@ async function getHospitalById(req, res) {
 
 async function generatePatientNeeds(req, res) {
   const { conversation, imageDescriptions = [] } = req.body;
-  
+
+  console.log("DEBUG - /api/generatePatientNeeds called");
+  console.log("DEBUG - Received conversation:", conversation);
+  console.log("DEBUG - Received imageDescriptions:", imageDescriptions);
+
   if (!conversation) {
+    console.log("DEBUG - No conversation provided, returning 400");
     return res.status(400).json({ error: 'Conversation is required!' });
   }
 
   // pull openai singleton
   const openai = new OpenAIWorker({ apiKey: process.env.OPENAI_API_KEY });
   if (!openai) {
+    console.log("DEBUG - OpenAI instance not initialized, returning 500");
     return res.status(500).json({ error: 'OpenAI instance not initialized!' });
   }
 
   try {
+    console.log("DEBUG - Calling openai.generatePatientNeeds...");
     // Generate patient needs based on conversation and image descriptions
     const patientNeeds = await openai.generatePatientNeeds(conversation, imageDescriptions);
+    console.log("DEBUG - Received patientNeeds from OpenAI:", patientNeeds);
     return res.status(200).json({ patientNeeds });
   } catch (error) {
     console.error('Error generating patient needs:', error);

@@ -131,7 +131,7 @@ export class OpenAIWorker {
     
     const response = await this.openai.chat.completions.create({
       // TODO - determine which model to use
-      model: "gpt-4-turbo", 
+      model: this.model,
       messages: [
         { role: "system", content: prompt }
       ],
@@ -139,10 +139,28 @@ export class OpenAIWorker {
     });
 
     try {
+      // Get the raw content from the response
+      let content = response.choices[0].message.content;
+      
+      // Debug the raw response
+      console.log("DEBUG - Raw OpenAI response:", content);
+      
+      // Clean the response by removing markdown code blocks
+      if (content.includes("```")) {
+        // Remove markdown code blocks (```json and ```)
+        content = content.replace(/```json\n|\```/g, "").trim();
+      }
+      
+      // Debug the cleaned content
+      console.log("DEBUG - Cleaned content for parsing:", content);
+      
       // Parse the JSON response
-      return JSON.parse(response.choices[0].message.content);
+      return JSON.parse(content);
     } catch (error) {
       console.error('Error parsing response:', error);
+      // If debugging, also log the raw response that failed to parse
+      console.error('Raw response that failed to parse:', 
+        response.choices[0]?.message?.content || 'No response content');
       throw new Error('Failed to generate valid patient needs data');
     }
   }
