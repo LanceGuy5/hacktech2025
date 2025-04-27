@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
 import { getLocation } from "@/utils/utils";
-import { MapPin, Phone, Clock, ExternalLink, Info } from "lucide-react";
+import { MapPin, Phone, Clock, ExternalLink, Info, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -153,8 +153,16 @@ export default function HospitalLocatorPage() {
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 max-w-7xl">
         {/* Map Section */}
         <Card className="md:col-span-2 overflow-hidden">
-          <CardHeader className="p-4 border-b">
+          <CardHeader className="p-4 border-b flex justify-between items-center">
             <CardTitle>Nearby Hospitals</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => window.location.href = '/'}
+              className="h-8 w-8 p-0"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
           </CardHeader>
           <CardContent className="p-0 h-[calc(100vh-10rem)]">
             <GoogleMap
