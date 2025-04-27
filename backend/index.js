@@ -17,7 +17,7 @@ pool.getConnection()
     conn.release();
   })
   .catch(err => {
-    console.error('❌ MySQL connection failed:', err);
+    console.log('❌ MySQL connection failed:', err);
     process.exit(1);  // quit if you can’t talk to your DB
   });
 
@@ -42,4 +42,6 @@ app.use((err, req, res, next) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
+console.log(PORT);
+
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

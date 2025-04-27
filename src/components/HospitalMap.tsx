@@ -49,7 +49,7 @@ export default function HospitalLocatorPage() {
       if (!response.ok) throw new Error("Error fetching hospitals");
 
       let data = await response.json();
-
+      console.log(data);
       data = data.places.map((hospital: any, index: number) => ({
         id: String(index),
         name: hospital.displayName.text,
@@ -62,8 +62,16 @@ export default function HospitalLocatorPage() {
         hours: "Open 24/7", // Could be smarter if API gives real hours
         specialties: ["General Healthcare"], // Placeholder, unless API returns specialties
         websiteUri: hospital.websiteUri || null,
+        has_ct: hospital.internal_data.has_ct || false,
+        has_mri: hospital.internal_data.has_mri || false,
+        has_ultrasound: hospital.internal_data.has_ultrasound || false,
+        has_pet_ct: hospital.internal_data.has_pet_ct || false,
+        total_beds: hospital.internal_data.total_beds || 0,
+        total_beds_load: hospital.internal_data.total_beds_load || 0,
       }));
-
+      
+      console.log("Mapped hospital data:", data[0]); // Let's look at the first hospital's exact structure
+      
       setHospitals(data);
       setIsConnected(true);
     } catch (err) {
@@ -219,6 +227,16 @@ export default function HospitalLocatorPage() {
                             <li key={index}>{specialty}</li>
                           ))}
                         </ul>
+                      </div>
+                      <div className="pt-2">
+                        <h4 className="font-medium mb-1">Capacity</h4>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-600 text-sm">
+                          <div>CT Scan: {hospital.has_ct ? '✅' : '❌'}</div>
+                          <div>MRI: {hospital.has_mri ? '✅' : '❌'}</div>
+                          <div>Ultrasound: {hospital.has_ultrasound ? '✅' : '❌'}</div>
+                          <div>PET/CT: {hospital.has_pet_ct ? '✅' : '❌'}</div>
+                          <div>Beds: {Math.max(0, (hospital.total_beds || 0) - (hospital.total_beds_load || 0))}</div>
+                        </div>
                       </div>
                       {hospital.websiteUri && (
                         <Button
