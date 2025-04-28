@@ -30,7 +30,7 @@ export class GoogleWorker {
       // Max radius is 50km (in API docs)
       radius = 50000, // meters
       includedPrimaryTypes = ["hospital"],
-      maxResultCount = 5,
+      maxResultCount = 10,
       languageCode = "en",
       regionCode = "US",
       fieldMask = "places.displayName,places.location,places.websiteUri",

@@ -135,70 +135,106 @@ export function rankHospitals(hospitals, patientNeeds) {
     // Check for specific needs
     if (patientNeeds) {
       // Trauma cases
-      if (patientNeeds.isTrauma && data.is_trauma_center) {
-        score += 50;
-        
-        // Adjust score based on recommended trauma level
-        if (patientNeeds.recommendedTraumaLevel && data.trauma_level) {
-          // Perfect match
-          if (data.trauma_level === patientNeeds.recommendedTraumaLevel) {
-            score += 50;
+      if (patientNeeds.isTrauma) {
+        if (data.is_trauma_center) {
+          score += 50;
+          
+          // Adjust score based on recommended trauma level
+          if (patientNeeds.recommendedTraumaLevel && data.trauma_level) {
+            // Perfect match
+            if (data.trauma_level === patientNeeds.recommendedTraumaLevel) {
+              score += 50;
+            }
+            // Better than recommended (lower number = higher capability)
+            else if (data.trauma_level < patientNeeds.recommendedTraumaLevel) {
+              score += 40;
+            }
+            // One level below recommended
+            else if (data.trauma_level === patientNeeds.recommendedTraumaLevel + 1) {
+              score += 20;
+            }
+            // Two levels below recommended 
+            else if (data.trauma_level === patientNeeds.recommendedTraumaLevel + 2) {
+              score += 10;
+            }
+            // More than two levels below recommended - no bonus
           }
-          // Better than recommended (lower number = higher capability)
-          else if (data.trauma_level < patientNeeds.recommendedTraumaLevel) {
-            score += 40;
-          }
-          // One level below recommended
-          else if (data.trauma_level === patientNeeds.recommendedTraumaLevel + 1) {
-            score += 20;
-          }
-          // Two levels below recommended 
-          else if (data.trauma_level === patientNeeds.recommendedTraumaLevel + 2) {
-            score += 10;
-          }
-          // More than two levels below recommended - no bonus
+        } else {
+          // HEAVY PENALTY: Patient needs trauma center but hospital doesn't have one
+          score -= 100;
         }
       }
       
-      // Need for specific equipment (now using boolean flags)
-      if (patientNeeds.needsMRI && data.has_mri) {
-        score += 20; 
+      // Need for specific equipment (with heavy penalties)
+      if (patientNeeds.needsMRI) {
+        if (data.has_mri) {
+          score += 100;
+        } else {
+          score -= 100; // Heavy penalty for missing required MRI
+        }
       }
       
-      if (patientNeeds.needsCTScan && data.has_ct) {
-        score += 20;
+      if (patientNeeds.needsCTScan) {
+        if (data.has_ct) {
+          score += 100;
+        } else {
+          score -= 100; // Heavy penalty for missing required CT scan
+        }
       }
 
-      if (patientNeeds.needsUltrasound && data.has_ultrasound) {
-        score += 20;
+      if (patientNeeds.needsUltrasound) {
+        if (data.has_ultrasound) {
+          score += 100;
+        } else {
+          score -= 100; // Heavy penalty for missing required ultrasound
+        }
       }
 
-      if (patientNeeds.needsPetCT && data.has_pet_ct) {
-        score += 20;
+      if (patientNeeds.needsPetCT) {
+        if (data.has_pet_ct) {
+          score += 100;
+        } else {
+          score -= 100; // Heavy penalty for missing required PET CT
+        }
       }
 
-      // Special care needs
-      if (patientNeeds.needsSurgicalICU && data.icu_med_surg_beds > 0) {
-        const availableICUBeds = data.icu_med_surg_beds - (data.icu_med_surg_beds_load || 0);
-        const availabilityRatio = availableICUBeds / data.icu_med_surg_beds;
-        score += 30 * Math.max(0, availabilityRatio);
+      // Special care needs with penalties
+      if (patientNeeds.needsSurgicalICU) {
+        if (data.icu_med_surg_beds > 0) {
+          const availableICUBeds = data.icu_med_surg_beds - (data.icu_med_surg_beds_load || 0);
+          const availabilityRatio = availableICUBeds / data.icu_med_surg_beds;
+          score += 100 * Math.max(0, availabilityRatio);
+        } else {
+          score -= 100; // Heavy penalty for missing surgical ICU
+        }
       }
       
       // Pediatric needs
-      if (patientNeeds.needsPediatricICU && data.icu_pediatric_beds > 0) {
-        const availablePedBeds = data.icu_pediatric_beds - (data.icu_pediatric_beds_load || 0);
-        const availabilityRatio = availablePedBeds / data.icu_pediatric_beds;
-        score += 30 * Math.max(0, availabilityRatio);
+      if (patientNeeds.needsPediatricICU) {
+        if (data.icu_pediatric_beds > 0) {
+          const availablePedBeds = data.icu_pediatric_beds - (data.icu_pediatric_beds_load || 0);
+          const availabilityRatio = availablePedBeds / data.icu_pediatric_beds;
+          score += 100 * Math.max(0, availabilityRatio);
+        } else {
+          score -= 100; // Heavy penalty for missing pediatric ICU
+        }
       }
 
       // Neonatal needs
-      if (patientNeeds.needsNeonatalICU && data.icu_neonatal_beds > 0) {
-        const availableNeonatalBeds = data.icu_neonatal_beds - (data.icu_neonatal_beds_load || 0);
-        const availabilityRatio = availableNeonatalBeds / data.icu_neonatal_beds;
-        score += 30 * Math.max(0, availabilityRatio);
+      if (patientNeeds.needsNeonatalICU) {
+        if (data.icu_neonatal_beds > 0) {
+          const availableNeonatalBeds = data.icu_neonatal_beds - (data.icu_neonatal_beds_load || 0);
+          const availabilityRatio = availableNeonatalBeds / data.icu_neonatal_beds;
+          score += 100 * Math.max(0, availabilityRatio);
+        } else {
+          score -= 100; // Heavy penalty for missing neonatal ICU
+        }
       }
       
     }
+
+    // score cannot be less than 0
+    score = Math.max(0, score);
     
     // Calculate estimated wait time (simplified example)
     // more sophisticated model would not be linear
